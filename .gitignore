@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.parrat/
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+parrat.config.yaml
