@@ -1,14 +1,10 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/parrat-logo-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/parrat-logo-light.png">
-    <img src="assets/parrat-logo-light.png" width="80" alt="Parrat" />
-  </picture><br/>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/parrat-name-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/parrat-name-light.png">
-    <img src="assets/parrat-name-light.png" width="160" alt="Parrat" />
-  </picture>
+  <img src="assets/parrat-logo-light.png#gh-light-mode-only" width="80" alt="Parrat" />
+  <img src="assets/parrat-logo-dark.png#gh-dark-mode-only" width="80" alt="Parrat" />
+</p>
+<p align="center">
+  <img src="assets/parrat-name-light.png#gh-light-mode-only" width="160" alt="Parrat" />
+  <img src="assets/parrat-name-dark.png#gh-dark-mode-only" width="160" alt="Parrat" />
 </p>
 
 <p align="center">AI-powered root cause analysis for data incidents.</p>
