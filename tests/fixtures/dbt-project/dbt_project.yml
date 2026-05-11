@@ -1,0 +1,16 @@
+name: parrat_fixture
+version: 1.0.0
+config-version: 2
+
+profile: parrat_fixture
+
+model-paths: [models]
+target-path: target
+clean-targets: [target]
+
+models:
+  parrat_fixture:
+    staging:
+      +materialized: view
+    mart:
+      +materialized: table

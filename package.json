@@ -1,0 +1,73 @@
+{
+  "name": "@parrat/cli",
+  "version": "0.0.0",
+  "description": "AI-powered root cause analysis for data incidents",
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "parrat": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.33.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "examples",
+    "assets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RaguvindTharanitharan/parrat.git"
+  },
+  "homepage": "https://github.com/RaguvindTharanitharan/parrat",
+  "keywords": [
+    "data-engineering",
+    "dbt",
+    "ai",
+    "agents",
+    "mcp",
+    "root-cause-analysis",
+    "data-ops"
+  ],
+  "scripts": {
+    "lint": "biome check src tests",
+    "format": "biome format --write src tests",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit tests/core",
+    "test:component": "vitest run tests/component",
+    "test:skill": "vitest run tests/skill tests/skills",
+    "test:e2e": "vitest run tests/e2e",
+    "test:live": "vitest run tests/live",
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.0",
+    "tsx": "^4.19.0",
+    "yaml": "^2.5.0",
+    "zod": "^3.23.0",
+    "zod-to-json-schema": "^3.23.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild"]
+  }
+}

@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    tables:
+      - name: events_fresh
+        description: Fresh source — loaded 5 minutes ago (always PASS)
+        config:
+          loaded_at_field: "event_at"
+          freshness:
+            warn_after: { count: 1, period: hour }
+            error_after: { count: 6, period: hour }
+
+      - name: events_stale
+        description: Stale source — loaded 12 hours ago (always ERROR)
+        config:
+          loaded_at_field: "event_at"
+          freshness:
+            warn_after: { count: 1, period: hour }
+            error_after: { count: 6, period: hour }
+
+      - name: events_no_config
+        description: Source with no freshness config — Parrat should return no_freshness_config
