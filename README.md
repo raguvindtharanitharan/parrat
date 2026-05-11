@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/parrat-logo.svg" width="80" alt="Parrat" />
+  <img src="assets/parrat-logo.png" width="80" alt="Parrat" />
 </p>
 
 <h1 align="center">Parrat</h1>
