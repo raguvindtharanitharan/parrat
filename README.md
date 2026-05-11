@@ -14,7 +14,7 @@
 <p align="center">AI-powered root cause analysis for data incidents.</p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@parrat/cli"><img src="https://img.shields.io/npm/v/@parrat/cli" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/parrat"><img src="https://img.shields.io/npm/v/parrat" alt="npm version" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="Apache 2.0" /></a>
 </p>
 
@@ -55,7 +55,7 @@ parrat run lineage-analysis
 ## Install
 
 ```bash
-npm install -g @parrat/cli
+npm install -g parrat
 ```
 
 ## Configure
