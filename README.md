@@ -3,7 +3,7 @@
     <source media="(prefers-color-scheme: dark)" srcset="assets/parrat-logo-dark.png">
     <source media="(prefers-color-scheme: light)" srcset="assets/parrat-logo-light.png">
     <img src="assets/parrat-logo-light.png" width="80" alt="Parrat" />
-  </picture>
+  </picture><br />
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/parrat-name-dark.png">
     <source media="(prefers-color-scheme: light)" srcset="assets/parrat-name-light.png">
