@@ -70,6 +70,8 @@ export interface McpCallPayload {
   result: unknown;
   duration_ms: number;
   turn_index: number;
+  is_error: boolean;
+  tool_returned_error: boolean;
 }
 
 export interface SkillOutputCapturedPayload {

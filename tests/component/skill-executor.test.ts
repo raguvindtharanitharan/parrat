@@ -247,6 +247,46 @@ describe('core/llm/skill-executor', () => {
     );
   });
 
+  it('sets tool_returned_error true when tool returns error text content', async () => {
+    const mock = createMockMcpClient('dbt', [
+      { name: 'list', description: 'list', inputSchema: {} },
+    ]);
+    mock.queueResponse('list', [{ type: 'text', text: 'Error: model not found' }]);
+    vi.mocked(connectMcpClient).mockResolvedValue(mock);
+
+    const { logger, events } = createCapturingLogger();
+    const llm = makeMockLlmClient([
+      makeToolUseMessage('mcp__dbt__list', 'tu-1', {}),
+      makeToolUseMessage('emit_findings', 'tu-2', { status: 'ok', detail: 'done' }),
+    ]);
+
+    await executeSkill({ ...BASE_OPTIONS, skillName: 'test-skill', llm, auditLogger: logger });
+
+    const mcpEvent = events.find((e) => e.type === 'mcp_call');
+    expect(mcpEvent?.payload.tool_returned_error).toBe(true);
+    expect(mcpEvent?.payload.is_error).toBe(false);
+  });
+
+  it('sets is_error true when tool returns a protocol-level error', async () => {
+    const mock = createMockMcpClient('dbt', [
+      { name: 'list', description: 'list', inputSchema: {} },
+    ]);
+    mock.queueResponse('list', [{ type: 'text', text: 'tool failed' }], true);
+    vi.mocked(connectMcpClient).mockResolvedValue(mock);
+
+    const { logger, events } = createCapturingLogger();
+    const llm = makeMockLlmClient([
+      makeToolUseMessage('mcp__dbt__list', 'tu-1', {}),
+      makeToolUseMessage('emit_findings', 'tu-2', { status: 'ok', detail: 'done' }),
+    ]);
+
+    await executeSkill({ ...BASE_OPTIONS, skillName: 'test-skill', llm, auditLogger: logger });
+
+    const mcpEvent = events.find((e) => e.type === 'mcp_call');
+    expect(mcpEvent?.payload.is_error).toBe(true);
+    expect(mcpEvent?.payload.tool_returned_error).toBe(false);
+  });
+
   it('throws when allowlist references a tool the server did not expose', async () => {
     const mock = createMockMcpClient('dbt', [
       { name: 'list', description: 'list', inputSchema: {} },

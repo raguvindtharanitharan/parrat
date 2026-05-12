@@ -241,6 +241,21 @@ export async function executeSkill<TOutputSchema extends ZodTypeAny>(
           const result = await route.client.callTool(route.bareName, args);
           const durationMs = Date.now() - callStartedAt;
 
+          const isError = result.isError ?? false;
+          const toolReturnedError =
+            !isError &&
+            Array.isArray(result.content) &&
+            result.content.some(
+              (item) =>
+                item !== null &&
+                typeof item === 'object' &&
+                (item as Record<string, unknown>).type === 'text' &&
+                typeof (item as Record<string, unknown>).text === 'string' &&
+                /^error/i.test(
+                  ((item as Record<string, unknown>).text as string).trim(),
+                ),
+            );
+
           await options.auditLogger.write({
             type: 'mcp_call',
             tenantId: options.tenantId,
@@ -253,7 +268,8 @@ export async function executeSkill<TOutputSchema extends ZodTypeAny>(
               tool: route.bareName,
               args,
               result: result.content,
-              is_error: result.isError ?? false,
+              is_error: isError,
+              tool_returned_error: toolReturnedError,
               duration_ms: durationMs,
               turn_index: turn,
             },
