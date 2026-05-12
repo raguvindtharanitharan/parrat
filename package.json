@@ -22,9 +22,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/RaguvindTharanitharan/parrat.git"
+    "url": "https://github.com/raguvindtharanitharan/parrat.git"
   },
-  "homepage": "https://github.com/RaguvindTharanitharan/parrat",
+  "homepage": "https://github.com/raguvindtharanitharan/parrat",
   "keywords": [
     "data-engineering",
     "dbt",
