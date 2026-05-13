@@ -26,41 +26,35 @@ Parrat is an open-source CLI that uses Claude to investigate data incidents. Poi
 
 **Validated across 11 live investigations with 100% correct root causes at an average cost of $0.07 per investigation.**
 
-## How it works
+## Quick Start
 
-Parrat runs **Skills** — pre-codified investigation playbooks that reason across your stack using a deliberately thin set of tools. Each Skill gives Claude access to only the tools it needs for that specific investigation, producing predictable, auditable reasoning paths.
+**Prerequisites:** Node.js 20+, Python + `uv`, a configured dbt project (`~/.dbt/profiles.yml`), and an `ANTHROPIC_API_KEY`.
 
-Every run writes to an append-only audit log. Every run is replayable.
+**1. Install dbt-mcp**
 
+Parrat connects to your dbt project via [dbt-mcp](https://github.com/dbt-labs/dbt-mcp):
+
+```bash
+pip install uv
+uvx dbt-mcp --help   # confirm it works
 ```
-parrat run freshness-investigation
-parrat run metric-drop-rca
-parrat run lineage-analysis
+
+Run this from your dbt project directory. dbt-mcp picks up your project from the current directory and credentials from `~/.dbt/profiles.yml` automatically.
+
+**2. Set your Anthropic API key**
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+# or add it to a .env file in your project root
 ```
 
-## Skills
-
-| Skill | What it investigates |
-|---|---|
-| `freshness-investigation` | Why is this source stale? Which downstream models are at risk? |
-| `metric-drop-rca` | Why did this metric drop? Which upstream model caused it? |
-| `lineage-analysis` | What does this model depend on, and what depends on it? |
-
-## Prerequisites
-
-- Node.js 20+
-- [dbt-mcp](https://github.com/dbt-labs/dbt-mcp) running and accessible
-- `ANTHROPIC_API_KEY` (set in environment or `.env` file)
-
-## Install
+**3. Install Parrat and create config**
 
 ```bash
 npm install -g parrat
 ```
 
-## Configure
-
-Create a `parrat.config.yaml` in your project root:
+Create `parrat.config.yaml` in your dbt project root:
 
 ```yaml
 mcp:
@@ -76,23 +70,54 @@ skills:
     enabled: true
 ```
 
-See [`examples/snowflake/`](examples/snowflake/) for a complete configuration example.
-
-## Verify your setup
+**4. Verify and run**
 
 ```bash
-parrat doctor
+cd your-dbt-project/
+parrat doctor                        # checks API key, config, and dbt-mcp connectivity
+parrat run freshness-investigation   # investigates all sources in your project
 ```
 
-This checks Node version, API key, config file, and dbt-mcp connectivity before you run your first investigation.
+---
+
+## How it works
+
+Parrat runs **Skills** — pre-codified investigation playbooks that reason across your stack using a deliberately thin set of tools. Each Skill gives Claude access to only the tools it needs for that specific investigation, producing predictable, auditable reasoning paths.
+
+Every run writes to an append-only audit log. Every run is replayable.
+
+## Skills
+
+| Skill | What it investigates |
+|---|---|
+| `freshness-investigation` | Why is this source stale? Which downstream models are at risk? |
+| `metric-drop-rca` | Why did this metric drop? Which upstream model caused it? |
+| `lineage-analysis` | What does this model depend on, and what depends on it? |
 
 ## Run an investigation
 
+**Freshness investigation** — no input required. Investigates all sources with freshness configs:
+
 ```bash
 parrat run freshness-investigation
+
+# or investigate a specific source (source_name.table_name):
+parrat run freshness-investigation '{"source": "my_source.orders"}'
 ```
 
-Parrat reads your data stack, reasons about what broke, and returns a structured root cause with confidence rating. The full reasoning chain is logged to `.parrat/audit.jsonl`.
+**Metric drop RCA** — pass the metric and model context:
+
+```bash
+parrat run metric-drop-rca '{"metric_name":"revenue","model_id":"model.my_project.fct_revenue","metric_column":"amount","drop_percent":25}'
+```
+
+**Lineage analysis** — pass the dbt node ID:
+
+```bash
+parrat run lineage-analysis '{"node_id":"model.my_project.fct_orders"}'
+```
+
+Parrat returns a structured root cause with confidence rating. The full reasoning chain is logged to `.parrat/audit.jsonl`.
 
 ## Replay any investigation
 
@@ -100,12 +125,7 @@ Parrat reads your data stack, reasons about what broke, and returns a structured
 parrat replay <run_id>
 ```
 
-Every investigation is replayable — every tool call, every Claude turn, input tokens, output tokens, cost, and duration.
-
-## Examples
-
-- [`examples/snowflake/`](examples/snowflake/) — configuration for Snowflake + dbt
-- [`examples/custom-skill/`](examples/custom-skill/) — write your own investigation Skill in TypeScript
+The run ID is printed at the end of each investigation and also visible in `.parrat/audit.jsonl`. Every investigation is replayable — every tool call, every Claude turn, input tokens, output tokens, cost, and duration.
 
 ## License
 
