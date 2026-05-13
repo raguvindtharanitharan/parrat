@@ -28,7 +28,13 @@ Parrat is an open-source CLI that uses Claude to investigate data incidents. Poi
 
 ## Quick Start
 
-**Prerequisites:** Node.js 20+, Python + `uv`, a configured dbt project (`~/.dbt/profiles.yml`), and an `ANTHROPIC_API_KEY`.
+**Prerequisites:** Node.js 20+, Python, a configured dbt project (`~/.dbt/profiles.yml`), and an `ANTHROPIC_API_KEY`.
+
+All commands below run from your dbt project root. Navigate there first:
+
+```bash
+cd your-dbt-project/
+```
 
 **1. Install dbt-mcp**
 
@@ -39,7 +45,7 @@ pip install uv
 uvx dbt-mcp --help   # confirm it works
 ```
 
-Run this from your dbt project directory. dbt-mcp picks up your project from the current directory and credentials from `~/.dbt/profiles.yml` automatically.
+dbt-mcp picks up your project from the current directory and credentials from `~/.dbt/profiles.yml` automatically.
 
 **2. Set your Anthropic API key**
 
@@ -73,7 +79,6 @@ skills:
 **4. Verify and run**
 
 ```bash
-cd your-dbt-project/
 parrat doctor                        # checks API key, config, and dbt-mcp connectivity
 parrat run freshness-investigation   # investigates all sources in your project
 ```
@@ -95,6 +100,8 @@ Every run writes to an append-only audit log. Every run is replayable.
 | `lineage-analysis` | What does this model depend on, and what depends on it? |
 
 ## Run an investigation
+
+> Replace `my_project` with your dbt project name (from `dbt_project.yml`) and `my_source` with your source name (from `sources.yml`).
 
 **Freshness investigation** — no input required. Investigates all sources with freshness configs:
 
