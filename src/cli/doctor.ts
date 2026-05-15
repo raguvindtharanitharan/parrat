@@ -71,7 +71,14 @@ async function checkDbtMcp(): Promise<DoctorCheck> {
   try {
     const { stdout } = await execFileAsync(
       'uv',
-      ['run', '--with', 'dbt-mcp', 'python', '-c', 'from importlib.metadata import version; print(version("dbt-mcp"))'],
+      [
+        'run',
+        '--with',
+        'dbt-mcp',
+        'python',
+        '-c',
+        'from importlib.metadata import version; print(version("dbt-mcp"))',
+      ],
       { timeout: 30_000 },
     );
     const version = stdout.trim();

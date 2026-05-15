@@ -133,10 +133,7 @@ export class McpServerStartError extends ParratError {
 
   constructor(public readonly serverName: string) {
     super(
-      `MCP server '${serverName}' failed to start. ` +
-        `Check DBT_PATH in .parrat/config.yaml — dbt may not be on your PATH.\n` +
-        `Find your dbt path: which dbt (Mac/Linux) or where dbt (Windows), ` +
-        `or look in your virtual environment at .venv/bin/dbt (Mac/Linux) or .venv\\Scripts\\dbt.exe (Windows).`,
+      `MCP server '${serverName}' failed to start. Check DBT_PATH in .parrat/config.yaml — dbt may not be on your PATH.\nFind your dbt path: which dbt (Mac/Linux) or where dbt (Windows), or look in your virtual environment at .venv/bin/dbt (Mac/Linux) or .venv\\Scripts\\dbt.exe (Windows).`,
     );
   }
 }

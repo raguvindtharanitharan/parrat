@@ -251,9 +251,7 @@ export async function executeSkill<TOutputSchema extends ZodTypeAny>(
                 typeof item === 'object' &&
                 (item as Record<string, unknown>).type === 'text' &&
                 typeof (item as Record<string, unknown>).text === 'string' &&
-                /^error/i.test(
-                  ((item as Record<string, unknown>).text as string).trim(),
-                ),
+                /^error/i.test(((item as Record<string, unknown>).text as string).trim()),
             );
 
           await options.auditLogger.write({
