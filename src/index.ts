@@ -12,7 +12,7 @@ import { webhookCommand } from './cli/webhook.js';
 const program = new Command()
   .name('parrat')
   .description('Claude-native cross-stack agent for data ops')
-  .version('0.1.0-beta.5');
+  .version('0.1.0-beta.6');
 
 program.addCommand(doctorCommand);
 program.addCommand(initCommand);

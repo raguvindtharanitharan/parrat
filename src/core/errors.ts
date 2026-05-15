@@ -125,6 +125,23 @@ export class ConfigValidationError extends ParratError {
 }
 
 /**
+ * Thrown when an MCP server subprocess fails to start (e.g. dbt not on PATH).
+ * The message includes the server name and actionable fix guidance.
+ */
+export class McpServerStartError extends ParratError {
+  override readonly name = 'McpServerStartError';
+
+  constructor(public readonly serverName: string) {
+    super(
+      `MCP server '${serverName}' failed to start. ` +
+        `Check DBT_PATH in .parrat/config.yaml — dbt may not be on your PATH.\n` +
+        `Find your dbt path: which dbt (Mac/Linux) or where dbt (Windows), ` +
+        `or look in your virtual environment at .venv/bin/dbt (Mac/Linux) or .venv\\Scripts\\dbt.exe (Windows).`,
+    );
+  }
+}
+
+/**
  * Thrown when Claude attempts to invoke an MCP tool that isn't in the Skill's
  * allowlist. Should never trigger if Agent SDK filtering is configured
  * correctly; defensive check for Phase 1+ when custom MCP servers are added.

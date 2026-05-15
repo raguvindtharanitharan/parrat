@@ -5,8 +5,8 @@
     "static_analysis_parsed_path_count": 0,
     "is_partial_parse_enabled": true,
     "is_static_analysis_enabled": true,
-    "read_files_elapsed": 0.062273899995489046,
-    "load_all_elapsed": 0.1912544000078924,
+    "read_files_elapsed": 0.025554800013196655,
+    "load_all_elapsed": 0.10920289999921806,
     "projects": [
         {
             "project_name": "parrat_fixture",

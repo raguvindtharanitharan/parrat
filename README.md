@@ -42,10 +42,9 @@ Parrat connects to your dbt project via [dbt-mcp](https://github.com/dbt-labs/db
 
 ```bash
 pip install uv
-uvx dbt-mcp --help   # confirm it works
 ```
 
-dbt-mcp picks up your project from the current directory and credentials from `~/.dbt/profiles.yml` automatically.
+`uvx` (included with uv) fetches and runs dbt-mcp automatically when Parrat starts a Skill — nothing else to install.
 
 **2. Set your Anthropic API key**
 
@@ -60,27 +59,52 @@ export ANTHROPIC_API_KEY=sk-ant-...
 npm install -g parrat
 ```
 
-Create `parrat.config.yaml` in your dbt project root:
+Run `parrat init` to create the config:
+
+```bash
+parrat init
+```
+
+You should see: `Configuration written to .parrat/config.yaml`. Open that file and fill in the `mcpServers` block:
 
 ```yaml
-mcp:
-  command: uvx
-  args: ["dbt-mcp"]
-
-skills:
-  freshness-investigation:
-    enabled: true
-  metric-drop-rca:
-    enabled: true
-  lineage-analysis:
-    enabled: true
+mcpServers:
+  dbt:
+    command: uvx
+    args: [dbt-mcp]
+    env:
+      DBT_PROJECT_DIR: .
+      DBT_PATH: dbt
+      PYTHONUTF8: "1"  # Windows only
 ```
+
+`DBT_PROJECT_DIR: .` resolves to your dbt project root as long as you run `parrat` from that directory. If `DBT_PATH: dbt` fails (dbt not on your PATH), replace it with the absolute path to your dbt executable — see [#4 below](#4-verify-and-run) for how to find it.
 
 **4. Verify and run**
 
 ```bash
 parrat doctor                        # checks API key, config, and dbt-mcp connectivity
 parrat run freshness-investigation   # investigates all sources in your project
+```
+
+If `parrat run` fails with a dbt path error, dbt is likely installed in a virtual environment rather than globally. Find the path and update `DBT_PATH` in `.parrat/config.yaml`:
+
+```bash
+# Mac / Linux
+which dbt
+
+# Windows
+where dbt
+```
+
+If those return nothing, look inside your virtual environment directly:
+
+```
+# Mac / Linux
+.venv/bin/dbt
+
+# Windows
+.venv\Scripts\dbt.exe
 ```
 
 ---

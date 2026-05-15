@@ -1,5 +1,6 @@
 import { Client as McpSdkClient } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { McpServerStartError } from '../errors.js';
 import type { McpServerConfig } from './types.js';
 
 /**
@@ -46,6 +47,7 @@ export async function connectMcpClient(
     command: config.command,
     args: [...config.args],
     env: { ...process.env, ...config.env } as Record<string, string>,
+    stderr: 'pipe',
   });
 
   const sdkClient = new McpSdkClient(
@@ -53,7 +55,15 @@ export async function connectMcpClient(
     { capabilities: {} },
   );
 
-  await sdkClient.connect(transport);
+  try {
+    await sdkClient.connect(transport);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes('Connection closed') || msg.includes('-32000')) {
+      throw new McpServerStartError(serverName);
+    }
+    throw e;
+  }
 
   return {
     serverName,

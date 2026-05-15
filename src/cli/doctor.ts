@@ -25,12 +25,6 @@ export interface DoctorCheck {
   message: string;
 }
 
-/**
- * The dbt-mcp version Parrat is tested and pinned against.
- * Update this constant when upgrading dbt-mcp.
- */
-export const PINNED_DBT_MCP_VERSION = '0.4.3';
-
 async function checkApiKey(): Promise<DoctorCheck> {
   const key = process.env.ANTHROPIC_API_KEY;
   return key && key.length > 0
@@ -55,38 +49,38 @@ async function checkConfig(): Promise<DoctorCheck> {
   }
 }
 
-async function checkDbtMcpVersion(): Promise<DoctorCheck> {
-  let config: Awaited<ReturnType<typeof loadConfig>>;
+async function checkUvx(): Promise<DoctorCheck> {
   try {
-    config = await loadConfig();
-  } catch {
-    return { name: 'dbt-mcp version', status: 'warn', message: 'Skipped — config not loadable' };
-  }
-
-  const usesDbtMcp = Object.values(config.mcpServers).some(
-    (s) => s.command.includes('dbt-mcp') || s.args.some((a) => a.includes('dbt-mcp')),
-  );
-
-  if (!usesDbtMcp) {
-    return { name: 'dbt-mcp version', status: 'ok', message: 'dbt-mcp not configured — skipped' };
-  }
-
-  try {
-    const { stdout } = await execFileAsync('uvx', ['dbt-mcp', '--version'], { timeout: 10_000 });
+    const { stdout } = await execFileAsync('uvx', ['--version'], { timeout: 5_000 });
     const version = stdout.trim().split(/\s+/).pop() ?? '';
-    if (version === PINNED_DBT_MCP_VERSION) {
-      return { name: 'dbt-mcp version', status: 'ok', message: `${version} (matches pinned)` };
-    }
     return {
-      name: 'dbt-mcp version',
-      status: 'fail',
-      message: `Found ${version || '(unknown)'}, expected ${PINNED_DBT_MCP_VERSION} — run: uvx install dbt-mcp==${PINNED_DBT_MCP_VERSION}`,
+      name: 'uvx',
+      status: 'ok',
+      message: `${version} — dbt-mcp fetched automatically on first run`,
     };
   } catch (e) {
     return {
-      name: 'dbt-mcp version',
+      name: 'uvx',
       status: 'fail',
-      message: `Could not run 'uvx dbt-mcp --version': ${e instanceof Error ? e.message : String(e)}`,
+      message: `uvx not found — install with: pip install uv (${e instanceof Error ? e.message : String(e)})`,
+    };
+  }
+}
+
+async function checkDbtMcp(): Promise<DoctorCheck> {
+  try {
+    const { stdout } = await execFileAsync(
+      'uv',
+      ['run', '--with', 'dbt-mcp', 'python', '-c', 'from importlib.metadata import version; print(version("dbt-mcp"))'],
+      { timeout: 30_000 },
+    );
+    const version = stdout.trim();
+    return { name: 'dbt-mcp', status: 'ok', message: version };
+  } catch (e) {
+    return {
+      name: 'dbt-mcp',
+      status: 'fail',
+      message: `dbt-mcp not accessible — ensure uv is installed (${e instanceof Error ? e.message : String(e)})`,
     };
   }
 }
@@ -114,7 +108,8 @@ export async function runDoctor(auditPath: string): Promise<DoctorCheck[]> {
   return Promise.all([
     checkApiKey(),
     checkConfig(),
-    checkDbtMcpVersion(),
+    checkUvx(),
+    checkDbtMcp(),
     checkAuditDir(auditPath),
   ]);
 }

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PINNED_DBT_MCP_VERSION, runDoctor } from '../../src/cli/doctor.js';
+import { runDoctor } from '../../src/cli/doctor.js';
 
 vi.mock('../../src/core/config/index.js', () => ({
   loadConfig: vi.fn(),
@@ -40,11 +40,7 @@ describe('runDoctor', () => {
     auditPath = join(dir, '.parrat', 'audit.jsonl');
     vi.mocked(loadConfig).mockResolvedValue(validConfig as never);
     vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, cb) => {
-      (cb as (err: null, stdout: string, stderr: string) => void)(
-        null,
-        `dbt-mcp ${PINNED_DBT_MCP_VERSION}`,
-        '',
-      );
+      (cb as (err: null, stdout: string, stderr: string) => void)(null, 'uv 0.5.0', '');
       return {} as never;
     });
   });
@@ -89,30 +85,60 @@ describe('runDoctor', () => {
     expect(check?.status).toBe('ok');
   });
 
-  it('dbt-mcp version check fails when installed version mismatches pinned', async () => {
-    vi.mocked(loadConfig).mockResolvedValue({
-      ...validConfig,
-      mcpServers: { dbt: { command: 'uvx', args: ['dbt-mcp'], env: {} } },
-    } as never);
+  it('uvx check fails when uvx is not found', async () => {
     vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, cb) => {
-      (cb as (err: null, stdout: string, stderr: string) => void)(null, 'dbt-mcp 0.3.1', '');
+      (cb as (err: Error, stdout: string, stderr: string) => void)(
+        new Error('command not found'),
+        '',
+        '',
+      );
       return {} as never;
     });
     const checks = await runDoctor(auditPath);
-    const check = checks.find((c) => c.name === 'dbt-mcp version');
+    const check = checks.find((c) => c.name === 'uvx');
     expect(check?.status).toBe('fail');
-    expect(check?.message).toContain('0.3.1');
-    expect(check?.message).toContain(PINNED_DBT_MCP_VERSION);
+    expect(check?.message).toContain('pip install uv');
   });
 
-  it('dbt-mcp version check passes when version matches pinned', async () => {
-    vi.mocked(loadConfig).mockResolvedValue({
-      ...validConfig,
-      mcpServers: { dbt: { command: 'uvx', args: ['dbt-mcp'], env: {} } },
-    } as never);
+  it('uvx check passes when uvx is available', async () => {
     const checks = await runDoctor(auditPath);
-    const check = checks.find((c) => c.name === 'dbt-mcp version');
+    const check = checks.find((c) => c.name === 'uvx');
     expect(check?.status).toBe('ok');
+    expect(check?.message).toContain('dbt-mcp fetched automatically');
+  });
+
+  it('dbt-mcp check fails when uv run returns error', async () => {
+    vi.mocked(execFile).mockImplementation((cmd, _args, _opts, cb) => {
+      if (cmd === 'uv') {
+        (cb as (err: Error, stdout: string, stderr: string) => void)(
+          new Error('command not found'),
+          '',
+          '',
+        );
+      } else {
+        (cb as (err: null, stdout: string, stderr: string) => void)(null, 'uv 0.5.0', '');
+      }
+      return {} as never;
+    });
+    const checks = await runDoctor(auditPath);
+    const check = checks.find((c) => c.name === 'dbt-mcp');
+    expect(check?.status).toBe('fail');
+    expect(check?.message).toContain('dbt-mcp not accessible');
+  });
+
+  it('dbt-mcp check passes when uv run returns version', async () => {
+    vi.mocked(execFile).mockImplementation((cmd, _args, _opts, cb) => {
+      if (cmd === 'uv') {
+        (cb as (err: null, stdout: string, stderr: string) => void)(null, '1.19.1', '');
+      } else {
+        (cb as (err: null, stdout: string, stderr: string) => void)(null, 'uv 0.5.0', '');
+      }
+      return {} as never;
+    });
+    const checks = await runDoctor(auditPath);
+    const check = checks.find((c) => c.name === 'dbt-mcp');
+    expect(check?.status).toBe('ok');
+    expect(check?.message).toBe('1.19.1');
   });
 
   it('all checks pass → no fail status in results', async () => {
