@@ -52,7 +52,7 @@ async function checkConfig(): Promise<DoctorCheck> {
 async function checkUvx(): Promise<DoctorCheck> {
   try {
     const { stdout } = await execFileAsync('uvx', ['--version'], { timeout: 5_000 });
-    const version = stdout.trim().split(/\s+/).pop() ?? '';
+    const version = stdout.trim().split(/\s+/)[1] ?? '';
     return {
       name: 'uvx',
       status: 'ok',

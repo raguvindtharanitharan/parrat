@@ -9,10 +9,12 @@ import { skillsCommand } from './cli/skills.js';
 import { watchCommand } from './cli/watch.js';
 import { webhookCommand } from './cli/webhook.js';
 
+declare const __PARRAT_VERSION__: string;
+
 const program = new Command()
   .name('parrat')
   .description('Claude-native cross-stack agent for data ops')
-  .version('0.1.0-beta.7');
+  .version(__PARRAT_VERSION__);
 
 program.addCommand(doctorCommand);
 program.addCommand(initCommand);
