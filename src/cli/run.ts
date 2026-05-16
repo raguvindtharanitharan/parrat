@@ -6,6 +6,7 @@ import { createAuditLogger } from '../core/audit/logger.js';
 import { sweepAuditLog } from '../core/audit/retention.js';
 import { loadConfig } from '../core/config/index.js';
 import { createRuntime } from '../core/runtime.js';
+import { loadUserSkills } from '../core/skills/loader.js';
 import { createRegistry } from '../core/skills/registry.js';
 import { skills } from '../skills/index.js';
 
@@ -49,7 +50,8 @@ export async function runSkill(options: RunOptions): Promise<RunResult> {
     };
   }
 
-  const registry = createRegistry(skills);
+  const userSkills = await loadUserSkills(process.cwd());
+  const registry = createRegistry([...skills, ...userSkills]);
   const auditLogger = createAuditLogger({ filePath: resolve(options.auditPath) });
   const runtime = createRuntime({ registry, auditLogger });
 
@@ -69,7 +71,8 @@ export async function runSkill(options: RunOptions): Promise<RunResult> {
     if (
       errorName === 'MissingClaudeKeyError' ||
       errorName === 'ConfigValidationError' ||
-      errorName === 'ConfigNotFoundError'
+      errorName === 'ConfigNotFoundError' ||
+      errorName === 'InvalidUserSkillError'
     ) {
       return { exitCode: 4, error: message };
     }

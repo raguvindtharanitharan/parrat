@@ -174,6 +174,21 @@ export class MaxTurnsExceededError extends ParratError {
 }
 
 /**
+ * Thrown when a user Skill file in parrat-skills/ fails to load — either
+ * because the default export is missing or doesn't conform to the Skill shape.
+ */
+export class InvalidUserSkillError extends ParratError {
+  override readonly name = 'InvalidUserSkillError';
+
+  constructor(
+    public readonly filePath: string,
+    reason: string,
+  ) {
+    super(`Invalid Skill in '${filePath}': ${reason}`);
+  }
+}
+
+/**
  * Thrown on Anthropic API failures after retry exhaustion (transient errors)
  * or on the first 4xx response (auth, malformed request). The underlying
  * Anthropic error is accessible via `.cause`.
