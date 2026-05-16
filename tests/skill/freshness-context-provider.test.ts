@@ -84,6 +84,22 @@ describe('DbtFreshnessContextProvider', () => {
     expect(ctx?.status).toBe('unknown');
   });
 
+  it('maps dbt "runtime error" status to unknown (not stale)', async () => {
+    await writeSourcesJson([makeResult({ status: 'runtime error', max_loaded_at: null })]);
+    const provider = new DbtFreshnessContextProvider(tmpDir);
+    const [ctx] = await provider.getContext();
+    expect(ctx?.status).toBe('unknown');
+    expect(ctx?.thresholdBreached).toBeUndefined();
+  });
+
+  it('maps status "pass" with explicit null max_loaded_at to fresh', async () => {
+    await writeSourcesJson([makeResult({ status: 'pass', max_loaded_at: null })]);
+    const provider = new DbtFreshnessContextProvider(tmpDir);
+    const [ctx] = await provider.getContext();
+    expect(ctx?.status).toBe('fresh');
+    expect(ctx?.lastLoadedAt).toBeNull();
+  });
+
   it('sets lastLoadedAt to null when max_loaded_at is absent', async () => {
     await writeSourcesJson([makeResult({ max_loaded_at: undefined })]);
     const provider = new DbtFreshnessContextProvider(tmpDir);

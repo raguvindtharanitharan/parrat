@@ -28,6 +28,23 @@ describe('skills/freshness-investigation', () => {
     expect(prompt).not.toContain('Your ENTIRE response must be a single valid JSON object');
   });
 
+  it('prompt handles no-freshness-config pattern', () => {
+    const prompt = buildSystemPrompt([]);
+    expect(prompt).toContain('no_freshness_config');
+    expect(prompt).toContain('loaded_at_field');
+  });
+
+  it('prompt handles runtime error status from dbt', () => {
+    const prompt = buildSystemPrompt([]);
+    expect(prompt).toContain('"runtime error"');
+  });
+
+  it('prompt includes show-failure fallback guidance', () => {
+    const prompt = buildSystemPrompt([]);
+    expect(prompt).toContain("confidence: 'medium'");
+    expect(prompt).toContain('Do not retry');
+  });
+
   it('has the expected name and kind', () => {
     expect(freshnessInvestigationSkill.name).toBe('freshness-investigation');
     expect(freshnessInvestigationSkill.kind).toBe('investigation');

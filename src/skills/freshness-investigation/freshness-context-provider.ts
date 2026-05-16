@@ -71,5 +71,10 @@ function mapResult(r: SourcesJsonResult): FreshnessContext {
       thresholdBreached: 'error',
     };
   }
+  // dbt emits "runtime error" when it cannot evaluate freshness — typically because
+  // loaded_at_field is not configured on the source. Treat as unknown, not stale.
+  if (r.status === 'runtime error') {
+    return { source: r.unique_id, lastLoadedAt, status: 'unknown' };
+  }
   return { source: r.unique_id, lastLoadedAt, status: 'unknown' };
 }

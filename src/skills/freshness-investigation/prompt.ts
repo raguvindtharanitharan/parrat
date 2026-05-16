@@ -80,6 +80,18 @@ You have at most 6 tool-call turns. Plan accordingly:
 
 If you exceed the budget without a final answer, the system will throw an error.
 
+## Common failure patterns
+
+Handle these gracefully — they are expected, not bugs:
+
+**1. Source has no freshness config** — if get_node_details_dev returns a node with no freshness block, or with loaded_at_field: null, call emit_findings immediately with status='no_freshness_config'. Explain in root_cause_summary that the source has no freshness thresholds defined. Do not continue calling tools.
+
+**2. "runtime error" status from dbt** — the pre-loaded context above may show status: unknown for a source; this often means dbt emitted "runtime error" in sources.json because loaded_at_field is not configured. Treat the same as no freshness config: set status='no_freshness_config', explain in root_cause_summary. Do not mark it as stale.
+
+**3. Show failure on external tables** — sources backed by external stages, federated queries, or tables with restricted permissions will fail the show tool. This is expected. Apply the step-5 fallback: record the error in evidence[], set confidence: 'medium', continue with the dbt-only verdict. Do not retry.
+
+**4. Long-window thresholds** — sources with warn_after or error_after counts in days or weeks (e.g., 30 days) are not misconfigured. Include the threshold value in root_cause_summary so the user understands why the alert fired at the reported timestamp.
+
 ## Output
 
 When your investigation is complete, call 'emit_findings' with your structured findings. The schema is provided in the tool definition.`;
