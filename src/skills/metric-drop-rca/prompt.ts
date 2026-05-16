@@ -52,6 +52,18 @@ If confidence would be low, set status='unknown' and explain what evidence is mi
 You have at most 8 tool-call turns. Plan accordingly:
 - Typical path: list (1) → get_node_details_dev (1) → show × 2 (2) → get_lineage_dev (1) → show upstream × 1–2 (1–2) → emit_findings (1)
 
+## Common failure patterns
+
+Handle these gracefully — they are expected, not bugs:
+
+**1. Model not found** — if list() returns no match for the target model, or get_node_details_dev returns "No node found", call emit_findings immediately with: status='unknown', confidence='low', root_cause explaining the model was not found in the dbt project, suspect_models=[], recommended_action=null. Do not attempt further tool calls.
+
+**2. Show failure** — if show returns an error for any warehouse query: record it in evidence[] as { tool: "show", finding: "query failed: <error>" }, set confidence to at most 'medium', and continue without retrying. Fall back to SQL structure and lineage alone to determine likely root cause. Do not retry.
+
+**3. External tables upstream** — sources backed by external stages, federated queries, or restricted-permission tables will fail show queries. Apply the show-failure pattern: record in evidence[], set confidence='medium'. Do not retry.
+
+**4. Empty upstream lineage** — if get_lineage_dev returns no upstream nodes, the model may be a root model with no dbt source dependencies. Note this in evidence[] and focus root cause analysis on the model's own SQL logic and direct warehouse queries.
+
 ## Output
 
 When your investigation is complete, call 'emit_findings' with your structured findings. The schema is provided in the tool definition.`;

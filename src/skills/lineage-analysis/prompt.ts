@@ -48,6 +48,16 @@ Diagnostic tip: "No node found for selector" → switch "." to ":". "No node fou
 You have at most 4 tool-call turns:
 - list (1) → get_lineage_dev (1) → optional get_node_details_dev for critical path clarification (1) → emit_findings (1)
 
+## Common failure patterns
+
+Handle these gracefully — they are expected, not bugs:
+
+**1. Node not found** — if list() returns no match for the requested node_id, or get_node_details_dev returns "No node found", call emit_findings immediately with: upstream_nodes=[], downstream_nodes=[], impact_count=0, confidence='low', impact_summary explaining the node was not found in the dbt project. Do not attempt get_lineage_dev.
+
+**2. Empty lineage graph** — some node types (sources, seeds) return no lineage entries from get_lineage_dev. This is not an error. Return empty arrays for the applicable direction, set confidence='medium', and note in impact_summary that no lineage was found for this node type.
+
+**3. Tool error from dbt** — if any tool call returns an error response (not an empty result), record it in evidence[] as { tool: "<tool_name>", finding: "tool error: <error message>" }. Set confidence='medium' if partial results were obtained, confidence='low' if no useful data was retrieved. Do not retry the failing tool.
+
 ## Output
 
 When your analysis is complete, call 'emit_findings' with your structured findings. The schema is provided in the tool definition.`;
