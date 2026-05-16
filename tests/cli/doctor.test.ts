@@ -39,8 +39,12 @@ describe('runDoctor', () => {
     dir = mkdtempSync(join(tmpdir(), 'parrat-doctor-'));
     auditPath = join(dir, '.parrat', 'audit.jsonl');
     vi.mocked(loadConfig).mockResolvedValue(validConfig as never);
-    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, cb) => {
-      (cb as (err: null, stdout: string, stderr: string) => void)(null, 'uv 0.5.0', '');
+    vi.mocked(execFile).mockImplementation((cmd, _args, _opts, cb) => {
+      if (cmd === 'uv') {
+        (cb as (err: null, stdout: string, stderr: string) => void)(null, '1.19.1', '');
+      } else {
+        (cb as (err: null, stdout: string, stderr: string) => void)(null, 'uv 0.5.0', '');
+      }
       return {} as never;
     });
   });
@@ -139,6 +143,21 @@ describe('runDoctor', () => {
     const check = checks.find((c) => c.name === 'dbt-mcp');
     expect(check?.status).toBe('ok');
     expect(check?.message).toBe('1.19.1');
+  });
+
+  it('dbt-mcp check fails when version is below minimum', async () => {
+    vi.mocked(execFile).mockImplementation((cmd, _args, _opts, cb) => {
+      if (cmd === 'uv') {
+        (cb as (err: null, stdout: string, stderr: string) => void)(null, '0.0.1', '');
+      } else {
+        (cb as (err: null, stdout: string, stderr: string) => void)(null, 'uv 0.5.0', '');
+      }
+      return {} as never;
+    });
+    const checks = await runDoctor(auditPath);
+    const check = checks.find((c) => c.name === 'dbt-mcp');
+    expect(check?.status).toBe('fail');
+    expect(check?.message).toContain('minimum required');
   });
 
   it('all checks pass → no fail status in results', async () => {

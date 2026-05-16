@@ -67,6 +67,21 @@ async function checkUvx(): Promise<DoctorCheck> {
   }
 }
 
+const MIN_DBT_MCP_VERSION = '0.1.0';
+
+function parseVersion(v: string): [number, number, number] {
+  const parts = v.trim().split('.').map(Number);
+  return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
+}
+
+function versionGte(actual: string, minimum: string): boolean {
+  const [aMaj, aMin, aPatch] = parseVersion(actual);
+  const [mMaj, mMin, mPatch] = parseVersion(minimum);
+  if (aMaj !== mMaj) return aMaj > mMaj;
+  if (aMin !== mMin) return aMin > mMin;
+  return aPatch >= mPatch;
+}
+
 async function checkDbtMcp(): Promise<DoctorCheck> {
   try {
     const { stdout } = await execFileAsync(
@@ -82,6 +97,13 @@ async function checkDbtMcp(): Promise<DoctorCheck> {
       { timeout: 30_000 },
     );
     const version = stdout.trim();
+    if (!versionGte(version, MIN_DBT_MCP_VERSION)) {
+      return {
+        name: 'dbt-mcp',
+        status: 'fail',
+        message: `${version} — minimum required is ${MIN_DBT_MCP_VERSION}; upgrade: uvx upgrade dbt-mcp`,
+      };
+    }
     return { name: 'dbt-mcp', status: 'ok', message: version };
   } catch (e) {
     return {

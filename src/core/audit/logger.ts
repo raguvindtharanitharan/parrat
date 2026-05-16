@@ -191,6 +191,7 @@ export function createAuditLogger(options: CreateAuditLoggerOptions): AuditLogge
       }
 
       const record = {
+        schema_version: 1,
         event_id: randomUUID(),
         timestamp: new Date().toISOString(),
         tenant_id: input.tenantId,

@@ -14,6 +14,7 @@ export interface ReplayResult {
 }
 
 interface AuditRecord {
+  schema_version?: number;
   event_id: string;
   timestamp: string;
   run_id: string;

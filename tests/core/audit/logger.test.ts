@@ -43,6 +43,7 @@ describe('core/audit/logger', () => {
     expect(parsed.event_id).toMatch(/^[0-9a-f-]{36}$/);
     expect(parsed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(parsed.redaction_applied).toBe(false);
+    expect(parsed.schema_version).toBe(1);
   });
 
   it('appends multiple events as separate NDJSON lines', async () => {
