@@ -8,7 +8,7 @@ describe('core/config/schema', () => {
     if (result.success) {
       expect(result.data.tenant_id).toBe('default');
       expect(result.data.claude.model).toBe('claude-sonnet-4-6');
-      expect(result.data.claude.max_turns).toBe(6);
+      expect(result.data.claude.max_turns).toBe(10);
       expect(result.data.audit.log_path).toBe('.parrat/audit.jsonl');
     }
   });

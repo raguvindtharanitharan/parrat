@@ -48,7 +48,7 @@ export const auditConfigSchema = z
 export const claudeConfigSchema = z
   .object({
     model: z.string().default('claude-sonnet-4-6'),
-    max_turns: z.number().int().positive().default(6),
+    max_turns: z.number().int().positive().default(10),
     max_tokens: z.number().int().positive().default(4096),
     temperature: z.number().min(0).max(1).default(0.0),
   })
