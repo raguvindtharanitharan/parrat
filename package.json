@@ -1,6 +1,6 @@
 {
   "name": "parrat",
-  "version": "0.1.0-beta.8",
+  "version": "0.1.0-beta.9",
   "description": "AI-powered root cause analysis for data incidents",
   "type": "module",
   "license": "Apache-2.0",
