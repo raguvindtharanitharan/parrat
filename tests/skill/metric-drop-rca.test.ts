@@ -51,7 +51,12 @@ describe('skills/metric-drop-rca', () => {
   it('throws when ctx.config is missing', async () => {
     await expect(
       metricDropRcaSkill.run(
-        { metric_name: 'revenue', model_id: 'fct_revenue', metric_column: 'total', drop_percent: 20 },
+        {
+          metric_name: 'revenue',
+          model_id: 'fct_revenue',
+          metric_column: 'total',
+          drop_percent: 20,
+        },
         baseCtx,
       ),
     ).rejects.toThrow(/requires runtime-provided config/);
@@ -75,7 +80,12 @@ describe('skills/metric-drop-rca', () => {
 
     await expect(
       metricDropRcaSkill.run(
-        { metric_name: 'revenue', model_id: 'fct_revenue', metric_column: 'total', drop_percent: 20 },
+        {
+          metric_name: 'revenue',
+          model_id: 'fct_revenue',
+          metric_column: 'total',
+          drop_percent: 20,
+        },
         { ...baseCtx, config },
       ),
     ).rejects.toThrow(/requires an LLM client/);

@@ -46,7 +46,10 @@ describe('skills/lineage-analysis', () => {
 
   it('throws when ctx.config is missing', async () => {
     await expect(
-      lineageAnalysisSkill.run({ node_id: 'model:fct_orders', direction: 'both', depth: 3 }, baseCtx),
+      lineageAnalysisSkill.run(
+        { node_id: 'model:fct_orders', direction: 'both', depth: 3 },
+        baseCtx,
+      ),
     ).rejects.toThrow(/requires runtime-provided config/);
   });
 
