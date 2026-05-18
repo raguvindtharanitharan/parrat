@@ -158,6 +158,24 @@ parrat replay <run_id>
 
 The run ID is printed at the end of each investigation and also visible in `.parrat/audit.jsonl`. Every investigation is replayable — every tool call, every Claude turn, input tokens, output tokens, cost, and duration.
 
+## Privacy
+
+Parrat has no backend. There is no Parrat server, no telemetry, and no data collection.
+
+**What stays on your machine:**
+- Your `parrat.config.yaml` and any credentials in it
+- The audit log (`.parrat/audit.jsonl`)
+- Your dbt project files
+
+**What goes to Anthropic's API:**
+- The investigation input you pass to `parrat run`
+- Query results returned by your MCP tools (e.g. dbt-mcp `show` output, row counts, lineage data)
+- Claude's reasoning turns during the investigation
+
+This is the same data boundary as using [Claude Code](https://claude.ai/code) against your codebase. Anthropic's [usage policies](https://www.anthropic.com/legal/usage-policy) and [privacy policy](https://www.anthropic.com/legal/privacy) apply to API traffic. If you are on the Anthropic API (not Claude.ai), Anthropic does not train on your data by default.
+
+**What never leaves your machine:** raw database credentials, your full warehouse schema, or any data not explicitly retrieved by a tool call during an investigation.
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).
