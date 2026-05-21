@@ -117,6 +117,10 @@ Every run writes to an append-only audit log. Every run is replayable.
 
 ## Skills
 
+A Parrat Skill is a TypeScript module — not a markdown file. Each Skill defines a typed input/output contract (Zod schema), a constrained set of dbt-mcp tools it's allowed to call, and an `async run()` function that drives the investigation. The TypeScript boundary is what makes every run replayable: Parrat logs the exact inputs, tool calls, and Claude reasoning steps as structured, hash-verified events. A prompt file can't provide that guarantee.
+
+> **If you're familiar with Claude Code Skills (`.md` files):** those are natural-language instructions Claude interprets at chat time. Parrat Skills are operational code — deterministic, auditable, and independently testable. Same word, different layer. Parrat follows the same pattern established across the agent ecosystem: the [Anthropic Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview), [LangChain Tools](https://python.langchain.com/docs/concepts/tools/), and [OpenAI function definitions](https://platform.openai.com/docs/guides/function-calling) all define Skills/Tools as typed code for the same reason — determinism, testability, and structured output.
+
 | Skill | What it investigates |
 |---|---|
 | `freshness-investigation` | Why is this source stale? Which downstream models are at risk? |
