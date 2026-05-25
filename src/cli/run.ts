@@ -5,6 +5,8 @@ import { isDuplicateRun } from '../core/audit/idempotency.js';
 import { createAuditLogger } from '../core/audit/logger.js';
 import { sweepAuditLog } from '../core/audit/retention.js';
 import { loadConfig } from '../core/config/index.js';
+import { generateHtmlReport } from '../core/report/html.js';
+import { saveReport } from '../core/report/save.js';
 import { createRuntime } from '../core/runtime.js';
 import { loadUserSkills } from '../core/skills/loader.js';
 import { createRegistry } from '../core/skills/registry.js';
@@ -20,12 +22,14 @@ export interface RunOptions {
    * var by the Commander wrapper.
    */
   correlationId?: string;
+  reportFormat?: 'html';
 }
 
 export interface RunResult {
   exitCode: number;
   output?: unknown;
   error?: string;
+  reportPath?: string;
 }
 
 /**
@@ -62,7 +66,26 @@ export async function runSkill(options: RunOptions): Promise<RunResult> {
       actor: 'user',
       ...(options.correlationId ? { correlationId: options.correlationId } : {}),
     });
-    return { exitCode: 0, output };
+
+    let reportPath: string | undefined;
+    if (options.reportFormat === 'html') {
+      try {
+        const html = generateHtmlReport(options.skillName, output, {
+          generatedAt: new Date().toISOString(),
+          skillName: options.skillName,
+        });
+        const saved = await saveReport({
+          reportsDir: '.parrat/reports',
+          skillName: options.skillName,
+          html,
+        });
+        reportPath = saved.relativePath;
+      } catch {
+        // Report save failure is non-fatal — skill output still returned
+      }
+    }
+
+    return { exitCode: 0, output, ...(reportPath ? { reportPath } : {}) };
   } catch (e) {
     const errorName = e instanceof Error ? e.name : 'UnknownError';
     const message = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
@@ -90,12 +113,18 @@ export const runCommand = new Command('run')
     'Read Skill input from JSON file (alternative to positional argument)',
   )
   .option('--resume <workflow_id>', 'Resume a paused workflow (Phase 1+ feature; v1 stub)')
+  .option('--report <format>', 'Save investigation report to .parrat/reports/ (supported: html)')
   .action(
     async (
       skillName: string,
       positionalInputJson: string,
-      opts: { auditPath: string; resume?: string; inputFile?: string },
+      opts: { auditPath: string; resume?: string; inputFile?: string; report?: string },
     ) => {
+      if (opts.report && opts.report !== 'html') {
+        console.error(`Unknown --report format '${opts.report}'. Supported: html`);
+        process.exit(2);
+      }
+
       // --resume is reserved for Phase 1+ composite Skills (paused on approval).
       // v1 errors clearly with exit code 3 so external callers know this is a
       // "approval-pending / not-yet-implemented" signal, not a generic failure.
@@ -146,6 +175,7 @@ export const runCommand = new Command('run')
         inputJson,
         auditPath: opts.auditPath,
         ...(correlationId ? { correlationId } : {}),
+        ...(opts.report === 'html' ? { reportFormat: 'html' as const } : {}),
       });
 
       if (result.error) {
@@ -153,6 +183,9 @@ export const runCommand = new Command('run')
       }
       if (result.output !== undefined) {
         console.log(JSON.stringify(result.output, null, 2));
+      }
+      if (result.reportPath) {
+        process.stderr.write(`Report saved to ${result.reportPath}\n`);
       }
       if (result.exitCode !== 0) {
         process.exit(result.exitCode);
