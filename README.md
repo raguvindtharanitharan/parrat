@@ -170,6 +170,31 @@ Report saved to .parrat/reports/freshness-investigation-20260524-231219.html
 
 The file is a single HTML file with no external dependencies — no CDN, no network requests. It renders the status, confidence rating, root cause, recommended action, stale sources, downstream impact, and evidence chain. Forward it in Slack or email it directly; it opens in any browser.
 
+## Schedule automated monitoring
+
+`parrat watch` runs a configured skill on a schedule and posts to Slack when a problem is detected. Add a `watch` block (and optionally a `notify` block) to `.parrat/config.yaml`:
+
+```yaml
+watch:
+  skill: freshness-investigation
+  input:
+    source: "my_source.orders"
+    threshold: error
+
+notify:
+  slack:
+    webhook_url: https://hooks.slack.com/services/...
+```
+
+Then schedule `parrat watch` with cron (Mac/Linux) or Task Scheduler (Windows):
+
+```bash
+# Run every hour from your dbt project root
+0 * * * * cd /path/to/your-dbt-project && parrat watch
+```
+
+Each run saves an HTML report to `.parrat/reports/` and posts to Slack only when the status is `stale_warn`, `stale_error`, or the skill fails — silent on a clean pass.
+
 ## Replay any investigation
 
 ```bash

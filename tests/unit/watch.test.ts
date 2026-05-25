@@ -41,13 +41,14 @@ describe('cli/watch', () => {
     expect(result.error).toMatch(/No 'watch' section in config/);
   });
 
-  it('runs the skill named in config.watch with the configured input', async () => {
+  it('runs the skill named in config.watch with the configured input and html report', async () => {
     vi.mocked(runSkill).mockResolvedValue({ exitCode: 0, output: { status: 'fresh' } });
     await watchSkill({ config: WATCH_CONFIG, auditPath: '.parrat/audit.jsonl' });
     expect(runSkill).toHaveBeenCalledWith(
       expect.objectContaining({
         skillName: 'freshness-investigation',
         inputJson: JSON.stringify({ source: 'tpch.orders', threshold: 'error' }),
+        reportFormat: 'html',
       }),
     );
   });
@@ -75,21 +76,51 @@ describe('cli/watch', () => {
     expect(SlackNotifier).not.toHaveBeenCalled();
   });
 
-  it('sends Slack notification on skill success', async () => {
+  it('does not send Slack when status is fresh (clean run)', async () => {
     const mockSend = vi.fn().mockResolvedValue(undefined);
     vi.mocked(SlackNotifier).mockImplementation(() => ({ send: mockSend }));
     vi.mocked(runSkill).mockResolvedValue({ exitCode: 0, output: { status: 'fresh' } });
 
     await watchSkill({ config: NOTIFY_CONFIG, auditPath: '.parrat/audit.jsonl' });
 
-    expect(mockSend).toHaveBeenCalledOnce();
-    const [msg] = mockSend.mock.calls[0] as [{ text: string }];
-    expect(msg.text).toContain('freshness-investigation');
-    expect(msg.text).toContain('OK');
-    expect(msg.text).toContain('fresh');
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
-  it('sends Slack notification on skill failure', async () => {
+  it('sends Slack on stale_error status', async () => {
+    const mockSend = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(SlackNotifier).mockImplementation(() => ({ send: mockSend }));
+    vi.mocked(runSkill).mockResolvedValue({
+      exitCode: 0,
+      output: { status: 'stale_error', confidence: 'high', root_cause_summary: 'Pipeline stalled.' },
+      reportPath: '.parrat/reports/freshness-investigation-20260524-231219.html',
+    });
+
+    await watchSkill({ config: NOTIFY_CONFIG, auditPath: '.parrat/audit.jsonl' });
+
+    expect(mockSend).toHaveBeenCalledOnce();
+    const [msg] = mockSend.mock.calls[0] as [{ text: string }];
+    expect(msg.text).toContain('STALE ERROR');
+    expect(msg.text).toContain('Confidence: high');
+    expect(msg.text).toContain('Pipeline stalled.');
+    expect(msg.text).toContain('freshness-investigation-20260524-231219.html');
+  });
+
+  it('sends Slack on stale_warn status', async () => {
+    const mockSend = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(SlackNotifier).mockImplementation(() => ({ send: mockSend }));
+    vi.mocked(runSkill).mockResolvedValue({
+      exitCode: 0,
+      output: { status: 'stale_warn', confidence: 'medium' },
+    });
+
+    await watchSkill({ config: NOTIFY_CONFIG, auditPath: '.parrat/audit.jsonl' });
+
+    expect(mockSend).toHaveBeenCalledOnce();
+    const [msg] = mockSend.mock.calls[0] as [{ text: string }];
+    expect(msg.text).toContain('STALE WARN');
+  });
+
+  it('sends Slack on skill failure (exitCode 1)', async () => {
     const mockSend = vi.fn().mockResolvedValue(undefined);
     vi.mocked(SlackNotifier).mockImplementation(() => ({ send: mockSend }));
     vi.mocked(runSkill).mockResolvedValue({
@@ -107,7 +138,7 @@ describe('cli/watch', () => {
   it('returns exitCode 1 when Slack notification fails', async () => {
     const mockSend = vi.fn().mockRejectedValue(new Error('Slack webhook returned 500'));
     vi.mocked(SlackNotifier).mockImplementation(() => ({ send: mockSend }));
-    vi.mocked(runSkill).mockResolvedValue({ exitCode: 0, output: { status: 'fresh' } });
+    vi.mocked(runSkill).mockResolvedValue({ exitCode: 0, output: { status: 'stale_error' } });
 
     const result = await watchSkill({ config: NOTIFY_CONFIG, auditPath: '.parrat/audit.jsonl' });
 

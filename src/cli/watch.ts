@@ -17,13 +17,37 @@ export interface WatchResult {
   error?: string;
 }
 
-function formatSlackMessage(skillName: string, output: unknown, error: string | undefined): string {
+function shouldNotifySlack(output: unknown, exitCode: number): boolean {
+  if (exitCode !== 0) return true;
+  const out = typeof output === 'object' && output !== null ? (output as Record<string, unknown>) : {};
+  const status = typeof out.status === 'string' ? out.status : '';
+  return status === 'stale_warn' || status === 'stale_error';
+}
+
+function formatSlackMessage(
+  skillName: string,
+  output: unknown,
+  error: string | undefined,
+  reportPath: string | undefined,
+): string {
   if (error) {
-    return `[parrat] ${skillName} | FAILED\n${error}`;
+    return `[parrat watch] ${skillName} | FAILED\n${error}`;
   }
-  const json = JSON.stringify(output, null, 2);
-  const body = json.length > 2000 ? `${json.slice(0, 2000)}\n...(truncated)` : json;
-  return `[parrat] ${skillName} | OK\n${body}`;
+  const out = typeof output === 'object' && output !== null ? (output as Record<string, unknown>) : {};
+  const status = typeof out.status === 'string' ? out.status.replace(/_/g, ' ').toUpperCase() : 'UNKNOWN';
+  const confidence = typeof out.confidence === 'string' ? out.confidence : '';
+  const rootCause =
+    typeof out.root_cause_summary === 'string'
+      ? out.root_cause_summary
+      : typeof out.root_cause === 'string'
+        ? out.root_cause
+        : '';
+
+  const lines = [`[parrat watch] ${skillName} | ${status}`];
+  if (confidence) lines.push(`Confidence: ${confidence}`);
+  if (rootCause) lines.push(rootCause.length > 300 ? `${rootCause.slice(0, 300)}…` : rootCause);
+  if (reportPath) lines.push(`Report: ${reportPath}`);
+  return lines.join('\n');
 }
 
 /**
@@ -48,11 +72,12 @@ export async function watchSkill(options: WatchOptions): Promise<WatchResult> {
     skillName: skill,
     inputJson: JSON.stringify(input),
     auditPath: resolve(auditPath),
+    reportFormat: 'html',
   });
 
   const slackWebhookUrl = config.notify?.slack?.webhook_url;
-  if (slackWebhookUrl) {
-    const message = formatSlackMessage(skill, runResult.output, runResult.error);
+  if (slackWebhookUrl && shouldNotifySlack(runResult.output, runResult.exitCode)) {
+    const message = formatSlackMessage(skill, runResult.output, runResult.error, runResult.reportPath);
     const notifier = new SlackNotifier(slackWebhookUrl);
     try {
       await notifier.send({ text: message });
