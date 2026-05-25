@@ -154,6 +154,22 @@ parrat run lineage-analysis '{"node_id":"model.my_project.fct_orders"}'
 
 Parrat returns a structured root cause with confidence rating. The full reasoning chain is logged to `.parrat/audit.jsonl`.
 
+**Save an HTML report**
+
+Add `--report html` to any `parrat run` command to generate a self-contained HTML report alongside the terminal output:
+
+```bash
+parrat run freshness-investigation '{"source": "my_source.orders"}' --report html
+```
+
+The report is saved to `.parrat/reports/<skill>-YYYYMMDD-HHmmss.html` and the path is printed to stderr:
+
+```
+Report saved to .parrat/reports/freshness-investigation-20260524-231219.html
+```
+
+The file is a single HTML file with no external dependencies — no CDN, no network requests. It renders the status, confidence rating, root cause, recommended action, stale sources, downstream impact, and evidence chain. Forward it in Slack or email it directly; it opens in any browser.
+
 ## Replay any investigation
 
 ```bash
