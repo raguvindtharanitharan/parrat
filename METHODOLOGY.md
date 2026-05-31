@@ -27,7 +27,7 @@ You know the experience. An alert fires — or a stakeholder messages you — at
 
 Three months later, the same thing happens. A different engineer is on call. They start from scratch.
 
-The investigation you ran was real work, done by a skilled person. It required knowing where to look, what questions to ask, how to read a dbt graph, how to interpret a warehouse timestamp. But it left no artifact. The reasoning is gone. The next investigation is as hard as the first.
+The investigation you ran was real work, done by a playbooked person. It required knowing where to look, what questions to ask, how to read a dbt graph, how to interpret a warehouse timestamp. But it left no artifact. The reasoning is gone. The next investigation is as hard as the first.
 
 This is not a tooling problem. It is a practice problem. Data incident investigation has never been treated as a discipline — a named, repeatable, documented process with known steps, shared methodology, and accumulated institutional memory. Every other part of the modern data stack has infrastructure: transformation has dbt, testing has dbt test, orchestration has Airflow, observability has Monte Carlo. Investigation has a senior engineer's muscle memory and an informal Slack thread.
 
@@ -44,25 +44,25 @@ Every Parrat investigation has four components:
 | Component | Description |
 |-----------|-------------|
 | **A Trigger** | The event that initiated the investigation — a freshness threshold breach, an anomaly alert, a stakeholder report, or an explicit question. Recorded in the audit trail. The trigger defines the scope. |
-| **A Method** | A sequence of evidence-gathering steps using a defined, bounded set of tools. Each Skill encodes the method for a specific investigation type. The method is opinionated — it does not explore, it investigates. |
+| **A Method** | A sequence of evidence-gathering steps using a defined, bounded set of tools. Each Playbook encodes the method for a specific investigation type. The method is opinionated — it does not explore, it investigates. |
 | **A Conclusion** | A structured root cause with a confidence rating and a recommended action. Not a guess — a reasoned finding supported by direct evidence from the data stack. |
 | **An Artifact** | The audit trail — a permanent, replayable record of every tool call, every evidence step, every reasoning turn, cost, and duration. The investigation exists after the engineer has closed their laptop. |
 
-### Skills: codified investigation playbooks
+### Playbooks: codified investigation playbooks
 
-Each Parrat Skill is an implementation of this structure for a specific investigation type. Current Skills:
+Each Parrat Playbook is an implementation of this structure for a specific investigation type. Current Playbooks:
 
 - **`freshness-investigation`** — why is this source stale, which threshold did it breach, and which downstream models are at risk?
 - **`metric-drop-rca`** — why did this metric drop, which upstream model caused it, and what changed?
 - **`lineage-analysis`** — what does this model depend on, and what depends on it?
 
-Each Skill has a fixed input schema (what information it needs to start), a fixed output schema (what it promises to return), and a bounded tool surface (what it is allowed to access). The schema is a contract. The contract is what makes the output trustworthy and the investigation comparable across runs.
+Each Playbook has a fixed input schema (what information it needs to start), a fixed output schema (what it promises to return), and a bounded tool surface (what it is allowed to access). The schema is a contract. The contract is what makes the output trustworthy and the investigation comparable across runs.
 
 ---
 
 ## 3. Why the Tool Surface Is Thin
 
-Every Parrat Skill operates with 3–5 tools. This is a deliberate design choice, not a limitation.
+Every Parrat Playbook operates with 3–5 tools. This is a deliberate design choice, not a limitation.
 
 The data stack MCP ecosystem has made it trivially easy to expose 40, 60, 80 tools to an agent in a single session. Each vendor ships a comprehensive MCP server covering every operation their platform supports. Parrat deliberately does not use most of them.
 
@@ -79,9 +79,9 @@ The difference is not just efficiency. It is epistemological. A bloated tool sur
 
 Consider freshness investigation. The question is: *"what is the most recent timestamp in the source table, and does it breach the configured threshold?"* Answering that question requires exactly three tools: source metadata from dbt (to find the freshness configuration and the loaded_at field), a warehouse query (to find `MAX(loaded_at)`), and lineage data (to understand what is downstream). A fourth tool — say, git history — is not needed to answer the question. Including it does not improve the answer. It expands the reasoning surface and introduces the risk of an irrelevant finding becoming the conclusion.
 
-> **Security property:** A freshness investigation Skill cannot accidentally read your git history, send a Slack message, or modify your dbt project. The tool surface is the explicit contract between the Skill and your data stack. You can audit exactly what Parrat was allowed to access before you run it — because the allowlist is in the Skill definition.
+> **Security property:** A freshness investigation Playbook cannot accidentally read your git history, send a Slack message, or modify your dbt project. The tool surface is the explicit contract between the Playbook and your data stack. You can audit exactly what Parrat was allowed to access before you run it — because the allowlist is in the Playbook definition.
 
-### Tool surface by Skill
+### Tool surface by Playbook
 
 - **`freshness-investigation`**: `get_source_details` (freshness config), `show` (warehouse timestamp query), `get_lineage` (downstream impact). Three tools. The investigation question is answered completely.
 - **`metric-drop-rca`**: `get_node_details` (model definition), `show` (warehouse query for metric), `get_lineage` (upstream chain), `get_node_details` (upstream model). Four tools. The upstream cause question requires one additional hop.
@@ -114,7 +114,7 @@ The audit trail contains:
 - **Every tool call** — name, arguments, and the exact result returned from the data stack
 - **Every reasoning turn** — Claude's reasoning steps, including what hypothesis was formed and how it was tested
 - **The final output** — the structured conclusion, confidence rating, evidence chain, and recommended action
-- **Run metadata** — run ID, Skill name, model used, token counts, estimated cost, duration
+- **Run metadata** — run ID, Playbook name, model used, token counts, estimated cost, duration
 
 ### Three reasons the audit trail matters
 
@@ -245,7 +245,7 @@ This is not a new job. It is a name for something data engineers already do. The
 
 This document is a public contract, not a marketing page. It will be updated as the methodology evolves. When we discover new failure modes, when patterns emerge across hundreds of investigations, when a confidence calibration needs adjustment — we will update this document and note what changed in the changelog below.
 
-The methodology is also the quality bar for the Skills ecosystem. A Parrat Skill — whether written by us or by the community — should be evaluable against these principles: does it use a bounded tool surface? Does it form a hypothesis and test it? Does it produce a confidence rating backed by direct evidence? Does it write a complete audit record? These are not preferences. They are the definition of investigation methodology compliance.
+The methodology is also the quality bar for the Playbooks ecosystem. A Parrat Playbook — whether written by us or by the community — should be evaluable against these principles: does it use a bounded tool surface? Does it form a hypothesis and test it? Does it produce a confidence rating backed by direct evidence? Does it write a complete audit record? These are not preferences. They are the definition of investigation methodology compliance.
 
 ---
 
@@ -255,7 +255,7 @@ The methodology is also the quality bar for the Skills ecosystem. A Parrat Skill
 
 ### v1.0 — May 2026 — Initial methodology
 
-First public version. Covers freshness investigation, metric-drop RCA, and lineage analysis. Confidence rating framework (high / medium / low) defined. Thin tool surface principle (3–5 tools per Skill) documented. Audit trail schema v1 established. Validated across 13 investigations: 11 on Snowflake (parrat-dogfood) and 2 on DuckDB (jaffle_shop). 100% `confidence: high` rate where root cause was determinable. Average cost: $0.07/investigation. Average latency: freshness ~45s, lineage ~25s, metric-drop ~110s.
+First public version. Covers freshness investigation, metric-drop RCA, and lineage analysis. Confidence rating framework (high / medium / low) defined. Thin tool surface principle (3–5 tools per Playbook) documented. Audit trail schema v1 established. Validated across 13 investigations: 11 on Snowflake (parrat-dogfood) and 2 on DuckDB (jaffle_shop). 100% `confidence: high` rate where root cause was determinable. Average cost: $0.07/investigation. Average latency: freshness ~45s, lineage ~25s, metric-drop ~110s.
 
 ---
 
