@@ -18,7 +18,7 @@ interface AuditRecord {
   event_id: string;
   timestamp: string;
   run_id: string;
-  skill?: string;
+  playbook?: string;
   event_type: string;
   actor: string;
   payload: Record<string, unknown>;
@@ -32,7 +32,7 @@ function formatRecord(r: AuditRecord): string {
   const t = formatTime(r.timestamp);
   switch (r.event_type) {
     case 'trigger':
-      return `[${t}] TRIGGER   skill=${r.skill ?? '?'} actor=${r.actor}`;
+      return `[${t}] TRIGGER   playbook=${r.playbook ?? '?'} actor=${r.actor}`;
     case 'claude_call': {
       const p = r.payload;
       const cost = typeof p.cost_estimate_usd === 'number' ? p.cost_estimate_usd.toFixed(4) : '?';
@@ -45,9 +45,9 @@ function formatRecord(r: AuditRecord): string {
       const status = p.is_error ? ' ERROR' : '';
       return `[${t}] MCP       server=${p.server} tool=${p.tool} dur=${dur}s${status}`;
     }
-    case 'skill_output_captured':
+    case 'playbook_output_captured':
       return `[${t}] OUTPUT    turn=${r.payload.turn_index}`;
-    case 'skill_complete': {
+    case 'playbook_complete': {
       const dur =
         typeof r.payload.duration_ms === 'number'
           ? ` dur=${(r.payload.duration_ms / 1000).toFixed(1)}s`
@@ -100,7 +100,7 @@ export function replayRun(options: ReplayOptions): ReplayResult {
 }
 
 export const replayCommand = new Command('replay')
-  .description('Print a human-readable trace of a past Skill run from the audit log')
+  .description('Print a human-readable trace of a past Playbook run from the audit log')
   .argument('<run_id>', 'The run ID to replay')
   .option('--audit-path <path>', 'Path to audit log file', '.parrat/audit.jsonl')
   .action(async (runId: string, opts: { auditPath: string }) => {

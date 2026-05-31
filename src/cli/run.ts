@@ -5,15 +5,15 @@ import { isDuplicateRun } from '../core/audit/idempotency.js';
 import { createAuditLogger } from '../core/audit/logger.js';
 import { sweepAuditLog } from '../core/audit/retention.js';
 import { loadConfig } from '../core/config/index.js';
+import { loadUserPlaybooks } from '../core/playbooks/loader.js';
+import { createRegistry } from '../core/playbooks/registry.js';
 import { generateHtmlReport } from '../core/report/html.js';
 import { saveReport } from '../core/report/save.js';
 import { createRuntime } from '../core/runtime.js';
-import { loadUserSkills } from '../core/skills/loader.js';
-import { createRegistry } from '../core/skills/registry.js';
-import { skills } from '../skills/index.js';
+import { playbooks } from '../playbooks/index.js';
 
 export interface RunOptions {
-  skillName: string;
+  playbookName: string;
   inputJson: string;
   auditPath: string;
   /**
@@ -38,12 +38,12 @@ export interface RunResult {
  *
  * Exit codes (locked for v1):
  *   0 — success
- *   1 — Skill execution error (SkillNotFoundError, SchemaValidationError, MaxTurnsExceededError, etc.)
+ *   1 — Playbook execution error (PlaybookNotFoundError, SchemaValidationError, MaxTurnsExceededError, etc.)
  *   2 — invalid JSON input
- *   3 — approval-pending / --resume requested (reserved for Phase 1+ composite Skills)
+ *   3 — approval-pending / --resume requested (reserved for Phase 1+ composite Playbooks)
  *   4 — internal/config error (MissingClaudeKeyError, ConfigValidationError, ConfigNotFoundError)
  */
-export async function runSkill(options: RunOptions): Promise<RunResult> {
+export async function runPlaybook(options: RunOptions): Promise<RunResult> {
   let input: unknown;
   try {
     input = JSON.parse(options.inputJson);
@@ -54,14 +54,14 @@ export async function runSkill(options: RunOptions): Promise<RunResult> {
     };
   }
 
-  const userSkills = await loadUserSkills(process.cwd());
-  const registry = createRegistry([...skills, ...userSkills]);
+  const userPlaybooks = await loadUserPlaybooks(process.cwd());
+  const registry = createRegistry([...playbooks, ...userPlaybooks]);
   const auditLogger = createAuditLogger({ filePath: resolve(options.auditPath) });
   const runtime = createRuntime({ registry, auditLogger });
 
   try {
     const output = await runtime.invoke({
-      skill: options.skillName,
+      playbook: options.playbookName,
       input,
       actor: 'user',
       ...(options.correlationId ? { correlationId: options.correlationId } : {}),
@@ -70,18 +70,18 @@ export async function runSkill(options: RunOptions): Promise<RunResult> {
     let reportPath: string | undefined;
     if (options.reportFormat === 'html') {
       try {
-        const html = generateHtmlReport(options.skillName, output, {
+        const html = generateHtmlReport(options.playbookName, output, {
           generatedAt: new Date().toISOString(),
-          skillName: options.skillName,
+          playbookName: options.playbookName,
         });
         const saved = await saveReport({
           reportsDir: '.parrat/reports',
-          skillName: options.skillName,
+          playbookName: options.playbookName,
           html,
         });
         reportPath = saved.relativePath;
       } catch {
-        // Report save failure is non-fatal — skill output still returned
+        // Report save failure is non-fatal — playbook output still returned
       }
     }
 
@@ -95,7 +95,7 @@ export async function runSkill(options: RunOptions): Promise<RunResult> {
       errorName === 'MissingClaudeKeyError' ||
       errorName === 'ConfigValidationError' ||
       errorName === 'ConfigNotFoundError' ||
-      errorName === 'InvalidUserSkillError'
+      errorName === 'InvalidUserPlaybookError'
     ) {
       return { exitCode: 4, error: message };
     }
@@ -104,19 +104,19 @@ export async function runSkill(options: RunOptions): Promise<RunResult> {
 }
 
 export const runCommand = new Command('run')
-  .description('Run a Skill with the given input')
-  .argument('<skill>', 'Name of the Skill to run (e.g. hello-world)')
-  .argument('[input]', 'JSON input string for the Skill', '{}')
+  .description('Run a Playbook with the given input')
+  .argument('<playbook>', 'Name of the Playbook to run (e.g. hello-world)')
+  .argument('[input]', 'JSON input string for the Playbook', '{}')
   .option('--audit-path <path>', 'Path to audit log file', '.parrat/audit.jsonl')
   .option(
     '--input-file <path>',
-    'Read Skill input from JSON file (alternative to positional argument)',
+    'Read Playbook input from JSON file (alternative to positional argument)',
   )
   .option('--resume <workflow_id>', 'Resume a paused workflow (Phase 1+ feature; v1 stub)')
   .option('--report <format>', 'Save investigation report to .parrat/reports/ (supported: html)')
   .action(
     async (
-      skillName: string,
+      playbookName: string,
       positionalInputJson: string,
       opts: { auditPath: string; resume?: string; inputFile?: string; report?: string },
     ) => {
@@ -125,12 +125,12 @@ export const runCommand = new Command('run')
         process.exit(2);
       }
 
-      // --resume is reserved for Phase 1+ composite Skills (paused on approval).
+      // --resume is reserved for Phase 1+ composite Playbooks (paused on approval).
       // v1 errors clearly with exit code 3 so external callers know this is a
       // "approval-pending / not-yet-implemented" signal, not a generic failure.
       if (opts.resume) {
         console.error(
-          'parrat run --resume is reserved for Phase 1+ composite Skills. v1 has no resumable workflows.',
+          'parrat run --resume is reserved for Phase 1+ composite Playbooks. v1 has no resumable workflows.',
         );
         process.exit(3);
       }
@@ -170,8 +170,8 @@ export const runCommand = new Command('run')
         }
       }
 
-      const result = await runSkill({
-        skillName,
+      const result = await runPlaybook({
+        playbookName,
         inputJson,
         auditPath: opts.auditPath,
         ...(correlationId ? { correlationId } : {}),

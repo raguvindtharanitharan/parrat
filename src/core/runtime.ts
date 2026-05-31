@@ -5,15 +5,15 @@ import { loadConfig } from './config/index.js';
 import type { Config } from './config/types.js';
 import { getClaudeKey } from './keys.js';
 import { type LlmClient, createLlmClient } from './llm/client.js';
-import type { SkillContext, SkillSpec } from './skills/Skill.js';
-import type { SkillRegistry } from './skills/registry.js';
+import type { PlaybookContext, PlaybookSpec } from './playbooks/Playbook.js';
+import type { PlaybookRegistry } from './playbooks/registry.js';
 import { isTelemetryEnabled, track } from './telemetry.js';
 import { DEFAULT_TENANT_ID, type TenantId } from './types.js';
 
 /**
  * What the caller passes to runtime.invoke. Input is `unknown` because the
  * caller (CLI parsing JSON, a webhook handler, etc.) typically doesn't know
- * the Skill's compile-time input shape — the Skill's Zod inputSchema validates
+ * the Playbook's compile-time input shape — the Playbook's Zod inputSchema validates
  * it at the boundary.
  *
  * `correlationId` (M1) — when an external orchestrator invokes Parrat, it
@@ -22,7 +22,7 @@ import { DEFAULT_TENANT_ID, type TenantId } from './types.js';
  * omitted, `workflow_id` defaults to `run_id`.
  */
 export interface InvokeOptions {
-  skill: string;
+  playbook: string;
   input: unknown;
   actor: AuditActor;
   triggerMetadata?: Record<string, unknown>;
@@ -30,7 +30,7 @@ export interface InvokeOptions {
 }
 
 export interface CreateRuntimeOptions {
-  registry: SkillRegistry;
+  registry: PlaybookRegistry;
   auditLogger: AuditLogger;
   tenantId?: TenantId;
   /**
@@ -41,7 +41,7 @@ export interface CreateRuntimeOptions {
   config?: Config;
   /**
    * Pre-built LLM client. If omitted, runtime constructs one lazily when an
-   * invoked Skill declares `mcpServers` (i.e., needs to talk to Claude).
+   * invoked Playbook declares `mcpServers` (i.e., needs to talk to Claude).
    * Tests can inject a mock client.
    */
   llmClient?: LlmClient;
@@ -52,23 +52,23 @@ export interface Runtime {
 }
 
 /**
- * The runtime orchestrates a Skill invocation:
+ * The runtime orchestrates a Playbook invocation:
  *
- *   1. Look up the Skill by name (throws SkillNotFoundError if missing —
+ *   1. Look up the Playbook by name (throws PlaybookNotFoundError if missing —
  *      pre-flight failure, NOT audited)
  *   2. Generate a fresh runId (UUID); set workflowId = correlationId ?? runId
- *   3. If the Skill needs config / LLM (declares `mcpServers`), lazily load
+ *   3. If the Playbook needs config / LLM (declares `mcpServers`), lazily load
  *      config + construct an LlmClient. Otherwise leave undefined for
- *      pure-function Skills like hello-world.
- *   4. Build a SkillContext with tenantId, runId, workflowId, auditLogger,
+ *      pure-function Playbooks like hello-world.
+ *   4. Build a PlaybookContext with tenantId, runId, workflowId, auditLogger,
  *      actor, config, llmClient
  *   5. Emit a `trigger` audit event capturing the input
- *   6. Run the Skill (input/output schema validation happens inside the Skill)
- *   7. On success: emit `skill_complete` with the output, return the output
+ *   6. Run the Playbook (input/output schema validation happens inside the Playbook)
+ *   7. On success: emit `playbook_complete` with the output, return the output
  *      On failure: emit `error` with name + message, then rethrow
  *
- * Skills MAY write their own audit events via ctx.auditLogger (e.g., the
- * skill-executor emits `mcp_call` events on every Claude tool invocation).
+ * Playbooks MAY write their own audit events via ctx.auditLogger (e.g., the
+ * playbook-executor emits `mcp_call` events on every Claude tool invocation).
  */
 export function createRuntime(options: CreateRuntimeOptions): Runtime {
   const { registry, auditLogger } = options;
@@ -90,18 +90,22 @@ export function createRuntime(options: CreateRuntimeOptions): Runtime {
   }
 
   return {
-    invoke: async ({ skill: skillName, input, actor, triggerMetadata, correlationId }) => {
-      const skill = registry.lookup(skillName);
+    invoke: async ({ playbook: playbookName, input, actor, triggerMetadata, correlationId }) => {
+      const playbook = registry.lookup(playbookName);
       const runId = randomUUID();
       const workflowId = correlationId ?? runId;
-      const skillSpec = skill as SkillSpec<typeof skill.inputSchema, typeof skill.outputSchema>;
-      const skillNeedsLlm = !!skillSpec.mcpServers && Object.keys(skillSpec.mcpServers).length > 0;
+      const playbookSpec = playbook as PlaybookSpec<
+        typeof playbook.inputSchema,
+        typeof playbook.outputSchema
+      >;
+      const playbookNeedsLlm =
+        !!playbookSpec.mcpServers && Object.keys(playbookSpec.mcpServers).length > 0;
 
-      // Lazy: only load config / construct LLM client when the Skill needs them.
-      const config = skillNeedsLlm ? await getConfig() : undefined;
-      const llmClient = skillNeedsLlm ? await getLlmClient() : undefined;
+      // Lazy: only load config / construct LLM client when the Playbook needs them.
+      const config = playbookNeedsLlm ? await getConfig() : undefined;
+      const llmClient = playbookNeedsLlm ? await getLlmClient() : undefined;
 
-      const ctx: SkillContext = {
+      const ctx: PlaybookContext = {
         tenantId,
         runId,
         workflowId,
@@ -116,24 +120,24 @@ export function createRuntime(options: CreateRuntimeOptions): Runtime {
         tenantId,
         runId,
         workflowId,
-        skill: skillName,
+        playbook: playbookName,
         actor,
         payload: { input, triggerMetadata: triggerMetadata ?? {} },
       });
 
       try {
-        const output = await skill.run(input, ctx);
+        const output = await playbook.run(input, ctx);
         await auditLogger.write({
-          type: 'skill_complete',
+          type: 'playbook_complete',
           tenantId,
           runId,
           workflowId,
-          skill: skillName,
+          playbook: playbookName,
           actor,
           payload: { output },
         });
         if (config && isTelemetryEnabled(config)) {
-          await track({ event: 'skill_complete', properties: { skill: skillName } });
+          await track({ event: 'playbook_complete', properties: { playbook: playbookName } });
         }
         return output;
       } catch (e) {
@@ -142,7 +146,7 @@ export function createRuntime(options: CreateRuntimeOptions): Runtime {
           tenantId,
           runId,
           workflowId,
-          skill: skillName,
+          playbook: playbookName,
           actor,
           payload: {
             error_name: e instanceof Error ? e.name : 'UnknownError',

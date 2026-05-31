@@ -20,7 +20,7 @@ export interface McpToolCallResult {
 
 /**
  * Connected MCP client — wraps the @modelcontextprotocol/sdk Client + a
- * StdioClientTransport. The lifecycle is tied to a single Skill invocation:
+ * StdioClientTransport. The lifecycle is tied to a single Playbook invocation:
  * spawn → use → close in a try/finally.
  */
 export interface McpClient {

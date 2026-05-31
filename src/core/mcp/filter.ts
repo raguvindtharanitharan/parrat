@@ -2,7 +2,7 @@ import { McpToolDeniedError } from '../errors.js';
 import type { ResolvedToolAllowlist } from './types.js';
 
 /**
- * Compute the fully-qualified tool names for a Skill's tool allowlist. Used
+ * Compute the fully-qualified tool names for a Playbook's tool allowlist. Used
  * to construct the Claude Agent SDK's `allowedTools` array — see
  * https://platform.claude.com/docs/en/agent-sdk/mcp for naming convention.
  *

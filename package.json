@@ -43,7 +43,7 @@
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run tests/unit tests/core",
     "test:component": "vitest run tests/component",
-    "test:skill": "vitest run tests/skill tests/skills",
+    "test:playbook": "vitest run tests/playbook tests/playbooks",
     "test:e2e": "vitest run tests/e2e",
     "test:live": "vitest run tests/live",
     "build": "tsup",

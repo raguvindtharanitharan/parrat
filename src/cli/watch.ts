@@ -5,7 +5,7 @@ import { sweepAuditLog } from '../core/audit/retention.js';
 import { loadConfig } from '../core/config/loader.js';
 import type { Config } from '../core/config/types.js';
 import { SlackNotifier } from '../core/notify/slack.js';
-import { runSkill } from './run.js';
+import { runPlaybook } from './run.js';
 
 export interface WatchOptions {
   config: Config;
@@ -19,22 +19,25 @@ export interface WatchResult {
 
 function shouldNotifySlack(output: unknown, exitCode: number): boolean {
   if (exitCode !== 0) return true;
-  const out = typeof output === 'object' && output !== null ? (output as Record<string, unknown>) : {};
+  const out =
+    typeof output === 'object' && output !== null ? (output as Record<string, unknown>) : {};
   const status = typeof out.status === 'string' ? out.status : '';
   return status === 'stale_warn' || status === 'stale_error';
 }
 
 function formatSlackMessage(
-  skillName: string,
+  playbookName: string,
   output: unknown,
   error: string | undefined,
   reportPath: string | undefined,
 ): string {
   if (error) {
-    return `[parrat watch] ${skillName} | FAILED\n${error}`;
+    return `[parrat watch] ${playbookName} | FAILED\n${error}`;
   }
-  const out = typeof output === 'object' && output !== null ? (output as Record<string, unknown>) : {};
-  const status = typeof out.status === 'string' ? out.status.replace(/_/g, ' ').toUpperCase() : 'UNKNOWN';
+  const out =
+    typeof output === 'object' && output !== null ? (output as Record<string, unknown>) : {};
+  const status =
+    typeof out.status === 'string' ? out.status.replace(/_/g, ' ').toUpperCase() : 'UNKNOWN';
   const confidence = typeof out.confidence === 'string' ? out.confidence : '';
   const rootCause =
     typeof out.root_cause_summary === 'string'
@@ -43,7 +46,7 @@ function formatSlackMessage(
         ? out.root_cause
         : '';
 
-  const lines = [`[parrat watch] ${skillName} | ${status}`];
+  const lines = [`[parrat watch] ${playbookName} | ${status}`];
   if (confidence) lines.push(`Confidence: ${confidence}`);
   if (rootCause) lines.push(rootCause.length > 300 ? `${rootCause.slice(0, 300)}…` : rootCause);
   if (reportPath) lines.push(`Report: ${reportPath}`);
@@ -51,25 +54,25 @@ function formatSlackMessage(
 }
 
 /**
- * Pure handler for `parrat watch`. Reads skill + input from config.watch,
- * runs the skill, then delivers to config.notify.slack if configured.
+ * Pure handler for `parrat watch`. Reads playbook + input from config.watch,
+ * runs the playbook, then delivers to config.notify.slack if configured.
  * Throws are not caught here — the Commander wrapper handles process.exit.
  */
-export async function watchSkill(options: WatchOptions): Promise<WatchResult> {
+export async function watchPlaybook(options: WatchOptions): Promise<WatchResult> {
   const { config, auditPath } = options;
 
   if (!config.watch) {
     return {
       exitCode: 1,
       error:
-        "No 'watch' section in config. Add watch.skill and watch.input to .parrat/config.yaml.",
+        "No 'watch' section in config. Add watch.playbook and watch.input to .parrat/config.yaml.",
     };
   }
 
-  const { skill, input } = config.watch;
+  const { playbook, input } = config.watch;
 
-  const runResult = await runSkill({
-    skillName: skill,
+  const runResult = await runPlaybook({
+    playbookName: playbook,
     inputJson: JSON.stringify(input),
     auditPath: resolve(auditPath),
     reportFormat: 'html',
@@ -77,7 +80,12 @@ export async function watchSkill(options: WatchOptions): Promise<WatchResult> {
 
   const slackWebhookUrl = config.notify?.slack?.webhook_url;
   if (slackWebhookUrl && shouldNotifySlack(runResult.output, runResult.exitCode)) {
-    const message = formatSlackMessage(skill, runResult.output, runResult.error, runResult.reportPath);
+    const message = formatSlackMessage(
+      playbook,
+      runResult.output,
+      runResult.error,
+      runResult.reportPath,
+    );
     const notifier = new SlackNotifier(slackWebhookUrl);
     try {
       await notifier.send({ text: message });
@@ -85,7 +93,7 @@ export async function watchSkill(options: WatchOptions): Promise<WatchResult> {
       const notifyError = e instanceof Error ? e.message : String(e);
       return {
         exitCode: 1,
-        error: `Skill ${runResult.exitCode === 0 ? 'succeeded' : 'failed'} but Slack notification failed: ${notifyError}`,
+        error: `Playbook ${runResult.exitCode === 0 ? 'succeeded' : 'failed'} but Slack notification failed: ${notifyError}`,
       };
     }
   }
@@ -97,7 +105,7 @@ export async function watchSkill(options: WatchOptions): Promise<WatchResult> {
 }
 
 export const watchCommand = new Command('watch')
-  .description('Run the configured watch skill once (schedule via cron / Task Scheduler)')
+  .description('Run the configured watch playbook once (schedule via cron / Task Scheduler)')
   .option('--audit-path <path>', 'Path to audit log file', '.parrat/audit.jsonl')
   .action(async (opts: { auditPath: string }) => {
     let config: Config;
@@ -123,7 +131,7 @@ export const watchCommand = new Command('watch')
       }
     }
 
-    const result = await watchSkill({ config, auditPath: opts.auditPath });
+    const result = await watchPlaybook({ config, auditPath: opts.auditPath });
 
     if (result.error) {
       console.error(result.error);

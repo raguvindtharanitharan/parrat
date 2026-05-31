@@ -44,7 +44,7 @@ Parrat connects to your dbt project via [dbt-mcp](https://github.com/dbt-labs/db
 pip install uv
 ```
 
-`uvx` (included with uv) fetches and runs dbt-mcp automatically when Parrat starts a Skill — nothing else to install.
+`uvx` (included with uv) fetches and runs dbt-mcp automatically when Parrat starts a Playbook — nothing else to install.
 
 **2. Set your Anthropic API key**
 
@@ -111,17 +111,17 @@ If those return nothing, look inside your virtual environment directly:
 
 ## How it works
 
-Parrat runs **Skills** — pre-codified investigation playbooks that reason across your stack using a deliberately thin set of tools. Each Skill gives Claude access to only the tools it needs for that specific investigation, producing predictable, auditable reasoning paths.
+Parrat runs **Playbooks** — pre-codified investigation playbooks that reason across your stack using a deliberately thin set of tools. Each Playbook gives Claude access to only the tools it needs for that specific investigation, producing predictable, auditable reasoning paths.
 
 Every run writes to an append-only audit log. Every run is replayable.
 
-## Skills
+## Playbooks
 
-A Parrat Skill is a TypeScript module — not a markdown file. Each Skill defines a typed input/output contract (Zod schema), a constrained set of dbt-mcp tools it's allowed to call, and an `async run()` function that drives the investigation. The TypeScript boundary is what makes every run replayable: Parrat logs the exact inputs, tool calls, and Claude reasoning steps as structured, hash-verified events. A prompt file can't provide that guarantee.
+A Parrat Playbook is a TypeScript module — not a markdown file. Each Playbook defines a typed input/output contract (Zod schema), a constrained set of dbt-mcp tools it's allowed to call, and an `async run()` function that drives the investigation. The TypeScript boundary is what makes every run replayable: Parrat logs the exact inputs, tool calls, and Claude reasoning steps as structured, hash-verified events. A prompt file can't provide that guarantee.
 
-> **If you're familiar with Claude Code Skills (`.md` files):** those are natural-language instructions Claude interprets at chat time. Parrat Skills are operational code — deterministic, auditable, and independently testable. Same word, different layer. Parrat follows the same pattern established across the agent ecosystem: the [Anthropic Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview), [LangChain Tools](https://python.langchain.com/docs/concepts/tools/), and [OpenAI function definitions](https://platform.openai.com/docs/guides/function-calling) all define Skills/Tools as typed code for the same reason — determinism, testability, and structured output.
+> **If you're familiar with Claude Code Playbooks (`.md` files):** those are natural-language instructions Claude interprets at chat time. Parrat Playbooks are operational code — deterministic, auditable, and independently testable. Same word, different layer. Parrat follows the same pattern established across the agent ecosystem: the [Anthropic Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview), [LangChain Tools](https://python.langchain.com/docs/concepts/tools/), and [OpenAI function definitions](https://platform.openai.com/docs/guides/function-calling) all define Playbooks/Tools as typed code for the same reason — determinism, testability, and structured output.
 
-| Skill | What it investigates |
+| Playbook | What it investigates |
 |---|---|
 | `freshness-investigation` | Why is this source stale? Which downstream models are at risk? |
 | `metric-drop-rca` | Why did this metric drop? Which upstream model caused it? |
@@ -162,7 +162,7 @@ Add `--report html` to any `parrat run` command to generate a self-contained HTM
 parrat run freshness-investigation '{"source": "my_source.orders"}' --report html
 ```
 
-The report is saved to `.parrat/reports/<skill>-YYYYMMDD-HHmmss.html` and the path is printed to stderr:
+The report is saved to `.parrat/reports/<playbook>-YYYYMMDD-HHmmss.html` and the path is printed to stderr:
 
 ```
 Report saved to .parrat/reports/freshness-investigation-20260524-231219.html
@@ -172,11 +172,11 @@ The file is a single HTML file with no external dependencies — no CDN, no netw
 
 ## Schedule automated monitoring
 
-`parrat watch` runs a configured skill on a schedule and posts to Slack when a problem is detected. Add a `watch` block (and optionally a `notify` block) to `.parrat/config.yaml`:
+`parrat watch` runs a configured playbook on a schedule and posts to Slack when a problem is detected. Add a `watch` block (and optionally a `notify` block) to `.parrat/config.yaml`:
 
 ```yaml
 watch:
-  skill: freshness-investigation
+  playbook: freshness-investigation
   input:
     source: "my_source.orders"
     threshold: error
@@ -193,7 +193,7 @@ Then schedule `parrat watch` with cron (Mac/Linux) or Task Scheduler (Windows):
 0 * * * * cd /path/to/your-dbt-project && parrat watch
 ```
 
-Each run saves an HTML report to `.parrat/reports/` and posts to Slack only when the status is `stale_warn`, `stale_error`, or the skill fails — silent on a clean pass.
+Each run saves an HTML report to `.parrat/reports/` and posts to Slack only when the status is `stale_warn`, `stale_error`, or the playbook fails — silent on a clean pass.
 
 ## Replay any investigation
 

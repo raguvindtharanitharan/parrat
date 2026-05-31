@@ -1,13 +1,13 @@
 /**
  * Public API for the LLM reasoning layer. The client wraps the Anthropic
- * basic SDK with retry-on-transient logic; the skill executor orchestrates
- * Claude + MCP servers + audit emission for one Skill invocation.
+ * basic SDK with retry-on-transient logic; the playbook executor orchestrates
+ * Claude + MCP servers + audit emission for one Playbook invocation.
  */
 export { createLlmClient } from './client.js';
 export type { CreateLlmClientOptions, LlmCallOptions, LlmClient } from './client.js';
-export { executeSkill } from './skill-executor.js';
+export { executePlaybook } from './playbook-executor.js';
 export type {
-  SkillExecutorOptions,
-  SkillExecutorResult,
-  SkillMcpServer,
-} from './skill-executor.js';
+  PlaybookExecutorOptions,
+  PlaybookExecutorResult,
+  PlaybookMcpServer,
+} from './playbook-executor.js';

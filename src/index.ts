@@ -3,9 +3,9 @@ import { Command } from 'commander';
 import { auditCommand } from './cli/audit-query.js';
 import { doctorCommand } from './cli/doctor.js';
 import { initCommand } from './cli/init.js';
+import { playbooksCommand } from './cli/playbooks.js';
 import { replayCommand } from './cli/replay.js';
 import { runCommand } from './cli/run.js';
-import { skillsCommand } from './cli/skills.js';
 import { watchCommand } from './cli/watch.js';
 import { webhookCommand } from './cli/webhook.js';
 
@@ -19,7 +19,7 @@ const program = new Command()
 program.addCommand(doctorCommand);
 program.addCommand(initCommand);
 program.addCommand(runCommand);
-program.addCommand(skillsCommand);
+program.addCommand(playbooksCommand);
 program.addCommand(replayCommand);
 program.addCommand(watchCommand);
 program.addCommand(auditCommand);

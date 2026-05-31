@@ -8,7 +8,7 @@ export type {
   Config,
   McpServerConfig,
   NotifyConfig,
-  SkillDefaults,
+  PlaybookDefaults,
   SlackNotifyConfig,
   WatchConfig,
   WebhookConfig,

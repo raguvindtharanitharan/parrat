@@ -12,35 +12,35 @@ export class ParratError extends Error {
 }
 
 /**
- * Thrown by the Skill registry when a name is requested that wasn't registered.
+ * Thrown by the Playbook registry when a name is requested that wasn't registered.
  * Carries the requested name and the available names for programmatic recovery.
  */
-export class SkillNotFoundError extends ParratError {
-  override readonly name = 'SkillNotFoundError';
+export class PlaybookNotFoundError extends ParratError {
+  override readonly name = 'PlaybookNotFoundError';
 
   constructor(
-    public readonly skillName: string,
+    public readonly playbookName: string,
     public readonly available: readonly string[],
   ) {
     const list = available.join(', ') || '(none)';
-    super(`Skill not found: '${skillName}'. Available skills: ${list}.`);
+    super(`Playbook not found: '${playbookName}'. Available playbooks: ${list}.`);
   }
 }
 
 /**
- * Thrown at registry creation when two Skills share the same name.
+ * Thrown at registry creation when two Playbooks share the same name.
  */
-export class DuplicateSkillError extends ParratError {
-  override readonly name = 'DuplicateSkillError';
+export class DuplicatePlaybookError extends ParratError {
+  override readonly name = 'DuplicatePlaybookError';
 
-  constructor(public readonly skillName: string) {
-    super(`Duplicate skill name: ${skillName}`);
+  constructor(public readonly playbookName: string) {
+    super(`Duplicate playbook name: ${playbookName}`);
   }
 }
 
 /**
- * Thrown when a Skill's input or output fails Zod validation.
- * Carries the direction (which boundary failed), the Skill name, and the
+ * Thrown when a Playbook's input or output fails Zod validation.
+ * Carries the direction (which boundary failed), the Playbook name, and the
  * underlying ZodError accessible via `.cause`.
  */
 export class SchemaValidationError extends ParratError {
@@ -48,10 +48,10 @@ export class SchemaValidationError extends ParratError {
 
   constructor(
     public readonly direction: 'input' | 'output',
-    public readonly skillName: string,
+    public readonly playbookName: string,
     cause: ZodError,
   ) {
-    super(`Skill '${skillName}' ${direction} failed schema validation: ${cause.message}`, {
+    super(`Playbook '${playbookName}' ${direction} failed schema validation: ${cause.message}`, {
       cause,
     });
   }
@@ -139,7 +139,7 @@ export class McpServerStartError extends ParratError {
 }
 
 /**
- * Thrown when Claude attempts to invoke an MCP tool that isn't in the Skill's
+ * Thrown when Claude attempts to invoke an MCP tool that isn't in the Playbook's
  * allowlist. Should never trigger if Agent SDK filtering is configured
  * correctly; defensive check for Phase 1+ when custom MCP servers are added.
  */
@@ -151,40 +151,40 @@ export class McpToolDeniedError extends ParratError {
     public readonly allowlist: readonly string[],
   ) {
     const allowed = allowlist.join(', ') || '(none)';
-    super(`MCP tool '${toolName}' is not in this Skill's allowlist. Allowed: ${allowed}.`);
+    super(`MCP tool '${toolName}' is not in this Playbook's allowlist. Allowed: ${allowed}.`);
   }
 }
 
 /**
- * Thrown when the LLM tool-call loop exceeds the Skill's max_turns budget
- * without returning a final answer. The Skill should be redesigned with a
+ * Thrown when the LLM tool-call loop exceeds the Playbook's max_turns budget
+ * without returning a final answer. The Playbook should be redesigned with a
  * higher budget OR a tighter prompt if this fires.
  */
 export class MaxTurnsExceededError extends ParratError {
   override readonly name = 'MaxTurnsExceededError';
 
   constructor(
-    public readonly skillName: string,
+    public readonly playbookName: string,
     public readonly maxTurns: number,
   ) {
     super(
-      `Skill '${skillName}' did not converge within max_turns=${maxTurns}. Increase max_turns or refine the system prompt.`,
+      `Playbook '${playbookName}' did not converge within max_turns=${maxTurns}. Increase max_turns or refine the system prompt.`,
     );
   }
 }
 
 /**
- * Thrown when a user Skill file in parrat-skills/ fails to load — either
- * because the default export is missing or doesn't conform to the Skill shape.
+ * Thrown when a user Playbook file in parrat-playbooks/ fails to load — either
+ * because the default export is missing or doesn't conform to the Playbook shape.
  */
-export class InvalidUserSkillError extends ParratError {
-  override readonly name = 'InvalidUserSkillError';
+export class InvalidUserPlaybookError extends ParratError {
+  override readonly name = 'InvalidUserPlaybookError';
 
   constructor(
     public readonly filePath: string,
     reason: string,
   ) {
-    super(`Invalid Skill in '${filePath}': ${reason}`);
+    super(`Invalid Playbook in '${filePath}': ${reason}`);
   }
 }
 

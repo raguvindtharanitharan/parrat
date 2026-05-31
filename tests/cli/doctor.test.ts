@@ -19,7 +19,7 @@ const validConfig = {
   version: 1 as const,
   tenant_id: 'default',
   mcpServers: {},
-  skills: { defaults: { timeout_seconds: 60, max_retries: 2 } },
+  playbooks: { defaults: { timeout_seconds: 60, max_retries: 2 } },
   audit: {
     log_path: '.parrat/audit.jsonl',
     hash_algorithm: 'sha256' as const,

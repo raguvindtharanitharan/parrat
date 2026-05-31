@@ -27,7 +27,7 @@ describe('core/audit/logger', () => {
       type: 'trigger',
       tenantId: DEFAULT_TENANT_ID,
       runId: 'run-123',
-      skill: 'freshness-investigation',
+      playbook: 'freshness-investigation',
       actor: 'user',
       payload: { greeting: 'hi' },
     });
@@ -37,7 +37,7 @@ describe('core/audit/logger', () => {
     expect(parsed.tenant_id).toBe('default');
     expect(parsed.run_id).toBe('run-123');
     expect(parsed.event_type).toBe('trigger');
-    expect(parsed.skill).toBe('freshness-investigation');
+    expect(parsed.playbook).toBe('freshness-investigation');
     expect(parsed.actor).toBe('user');
     expect(parsed.payload).toEqual({ greeting: 'hi' });
     expect(parsed.event_id).toMatch(/^[0-9a-f-]{36}$/);
@@ -56,7 +56,7 @@ describe('core/audit/logger', () => {
       payload: {},
     });
     await logger.write({
-      type: 'skill_complete',
+      type: 'playbook_complete',
       tenantId: DEFAULT_TENANT_ID,
       runId: 'run-1',
       actor: 'user',
@@ -69,7 +69,7 @@ describe('core/audit/logger', () => {
       .split('\n')
       .map((line) => JSON.parse(line));
     expect(events).toHaveLength(2);
-    expect(events.map((e) => e.event_type)).toEqual(['trigger', 'skill_complete']);
+    expect(events.map((e) => e.event_type)).toEqual(['trigger', 'playbook_complete']);
   });
 
   it('creates parent directory lazily if it does not exist', async () => {
@@ -86,7 +86,7 @@ describe('core/audit/logger', () => {
     expect(content).toContain('"event_type":"trigger"');
   });
 
-  it('omits skill field when caller does not provide it', async () => {
+  it('omits playbook field when caller does not provide it', async () => {
     const logger = createAuditLogger({ filePath: auditPath });
     await logger.write({
       type: 'error',
@@ -97,7 +97,7 @@ describe('core/audit/logger', () => {
     });
     const content = await readFile(auditPath, 'utf8');
     const parsed = JSON.parse(content.trim());
-    expect(parsed.skill).toBeUndefined();
+    expect(parsed.playbook).toBeUndefined();
   });
 
   it('generates a unique event_id per write', async () => {
@@ -168,9 +168,9 @@ describe('core/audit/logger', () => {
       filePath: auditPath,
       auditConfig: { hash_algorithm: 'sha256', redact_fields: ['password'] },
     });
-    // skill_complete has no hash targets so password survives to the redaction step
+    // playbook_complete has no hash targets so password survives to the redaction step
     await logger.write({
-      type: 'skill_complete',
+      type: 'playbook_complete',
       tenantId: DEFAULT_TENANT_ID,
       runId: 'run-1',
       actor: 'user',
@@ -188,7 +188,7 @@ describe('core/audit/logger', () => {
       auditConfig: { hash_algorithm: 'sha256', redact_fields: ['password'] },
     });
     await logger.write({
-      type: 'skill_complete',
+      type: 'playbook_complete',
       tenantId: DEFAULT_TENANT_ID,
       runId: 'run-1',
       actor: 'user',

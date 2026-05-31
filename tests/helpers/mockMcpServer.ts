@@ -1,7 +1,7 @@
 import type { McpClient, McpToolCallResult, McpToolDefinition } from '../../src/core/mcp/client.js';
 
 /**
- * In-process MCP client mock for L3 Skill tests. Records every tool call so
+ * In-process MCP client mock for L3 Playbook tests. Records every tool call so
  * tests can assert on routing + args; returns canned responses keyed by tool
  * name (or via per-call response queues for fine-grained scenarios).
  *
@@ -11,7 +11,7 @@ import type { McpClient, McpToolCallResult, McpToolDefinition } from '../../src/
  *     { name: 'get_node_details_dev', description: '...', inputSchema: {} },
  *   ]);
  *   mock.queueResponse('list', { nodes: [...] });
- *   // Skill invocation routes through mock.callTool(...)
+ *   // Playbook invocation routes through mock.callTool(...)
  *   expect(mock.calls).toEqual([{ name: 'list', args: {} }]);
  */
 export interface MockMcpClient extends McpClient {

@@ -4,4 +4,10 @@
  */
 export { loadConfig, resolveConfigPath, resolveEnvVars, expandTilde } from './loader.js';
 export { applyEnvOverrides } from './overrides.js';
-export type { AuditConfig, ClaudeConfig, Config, McpServerConfig, SkillDefaults } from './types.js';
+export type {
+  AuditConfig,
+  ClaudeConfig,
+  Config,
+  McpServerConfig,
+  PlaybookDefaults,
+} from './types.js';

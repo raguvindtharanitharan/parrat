@@ -25,7 +25,7 @@ export async function pathExists(path: string): Promise<boolean> {
  *
  * The default ships the v1 schema (version: 1) with tenant_id and audit
  * settings populated. MCP server config + claude settings are commented-out
- * templates the user fills in for LLM-driven Skills.
+ * templates the user fills in for LLM-driven Playbooks.
  */
 export async function writeDefaultConfig(configPath: string): Promise<void> {
   const yaml = [
@@ -35,7 +35,7 @@ export async function writeDefaultConfig(configPath: string): Promise<void> {
     'version: 1',
     'tenant_id: default',
     '',
-    '# MCP servers — uncomment and configure for LLM-driven Skills',
+    '# MCP servers — uncomment and configure for LLM-driven Playbooks',
     '# (e.g., freshness-investigation needs a `dbt` server).',
     'mcpServers: {}',
     '#   dbt:',
@@ -70,7 +70,7 @@ export const initCommand = new Command('init')
   .action(async (opts: { configPath: string; force: boolean }) => {
     const configPath = resolve(opts.configPath);
     console.log('Welcome to Parrat.');
-    console.log('Run `parrat skills list` to see available Skills.');
+    console.log('Run `parrat playbooks list` to see available Playbooks.');
     console.log('');
 
     if ((await pathExists(configPath)) && !opts.force) {
@@ -93,7 +93,7 @@ export const initCommand = new Command('init')
       console.log('ANTHROPIC_API_KEY is set in your environment.');
     } else {
       console.log(
-        'ANTHROPIC_API_KEY not set. Run `export ANTHROPIC_API_KEY=...` before invoking Skills that call Claude.',
+        'ANTHROPIC_API_KEY not set. Run `export ANTHROPIC_API_KEY=...` before invoking Playbooks that call Claude.',
       );
     }
   });

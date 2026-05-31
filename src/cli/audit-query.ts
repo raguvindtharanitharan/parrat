@@ -20,7 +20,7 @@ function formatRecord(record: Record<string, unknown>): string {
   const ts = typeof record.timestamp === 'string' ? record.timestamp : '?';
   const type = typeof record.event_type === 'string' ? record.event_type : '?';
   const runId = typeof record.run_id === 'string' ? record.run_id.slice(0, 8) : '?';
-  const skill = typeof record.skill === 'string' ? `  skill=${record.skill}` : '';
+  const playbook = typeof record.playbook === 'string' ? `  playbook=${record.playbook}` : '';
 
   let detail = '';
   const payload = record.payload;
@@ -41,7 +41,7 @@ function formatRecord(record: Record<string, unknown>): string {
     detail = `  ${typeof p.error_message === 'string' ? p.error_message : ''}`;
   }
 
-  return `[${ts}] ${type.padEnd(22)} run=${runId}${skill}${detail}`;
+  return `[${ts}] ${type.padEnd(22)} run=${runId}${playbook}${detail}`;
 }
 
 export async function queryAuditLog(options: AuditQueryOptions): Promise<AuditQueryResult> {

@@ -4,8 +4,8 @@ import { z } from 'zod';
  * Per-MCP-server configuration. The map key (e.g., "dbt") becomes the server
  * name in the Agent SDK's `mcp__{name}__{tool}` tool naming convention.
  *
- * Skills declare their own tool allowlist; the optional `tools` field on this
- * config can pre-restrict at the server level (Skill allowlists then intersect).
+ * Playbooks declare their own tool allowlist; the optional `tools` field on this
+ * config can pre-restrict at the server level (Playbook allowlists then intersect).
  */
 export const mcpServerConfigSchema = z
   .object({
@@ -17,10 +17,10 @@ export const mcpServerConfigSchema = z
   .strict();
 
 /**
- * Defaults applied to every Skill invocation; per-Skill overrides go on the
- * Skill spec itself.
+ * Defaults applied to every Playbook invocation; per-Playbook overrides go on the
+ * Playbook spec itself.
  */
-export const skillDefaultsSchema = z
+export const playbookDefaultsSchema = z
   .object({
     timeout_seconds: z.number().int().positive().default(60),
     max_retries: z.number().int().nonnegative().default(2),
@@ -55,13 +55,13 @@ export const claudeConfigSchema = z
   .strict();
 
 /**
- * watch — which skill to run and what input to pass when `parrat watch` is invoked.
+ * watch — which playbook to run and what input to pass when `parrat watch` is invoked.
  * The schedule string is informational; actual scheduling is handled by the OS
  * (Task Scheduler / cron). Both fields are required when `watch` is present.
  */
 export const watchConfigSchema = z
   .object({
-    skill: z.string().min(1),
+    playbook: z.string().min(1),
     input: z.record(z.string(), z.unknown()).default({}),
   })
   .strict();
@@ -102,9 +102,9 @@ export const configSchema = z
     version: z.literal(1),
     tenant_id: z.string().default('default'),
     mcpServers: z.record(z.string(), mcpServerConfigSchema).default({}),
-    skills: z
+    playbooks: z
       .object({
-        defaults: skillDefaultsSchema.default({}),
+        defaults: playbookDefaultsSchema.default({}),
       })
       .strict()
       .default({}),
@@ -118,7 +118,7 @@ export const configSchema = z
 
 export type Config = z.infer<typeof configSchema>;
 export type McpServerConfig = z.infer<typeof mcpServerConfigSchema>;
-export type SkillDefaults = z.infer<typeof skillDefaultsSchema>;
+export type PlaybookDefaults = z.infer<typeof playbookDefaultsSchema>;
 export type AuditConfig = z.infer<typeof auditConfigSchema>;
 export type ClaudeConfig = z.infer<typeof claudeConfigSchema>;
 export type WatchConfig = z.infer<typeof watchConfigSchema>;

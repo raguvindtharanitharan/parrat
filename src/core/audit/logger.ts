@@ -6,16 +6,16 @@ import { AuditWriteError } from '../errors.js';
 import type { TenantId } from '../types.js';
 
 /**
- * The event categories Parrat audits. Step 6 emits `trigger`, `skill_complete`,
+ * The event categories Parrat audits. Step 6 emits `trigger`, `playbook_complete`,
  * and `error` directly. `claude_call` is added in step 7 (runtime + Claude);
  * `mcp_call` lands in M1 onward as MCPs come online.
  */
 export type AuditEventType =
   | 'trigger'
-  | 'skill_complete'
+  | 'playbook_complete'
   | 'claude_call'
   | 'mcp_call'
-  | 'skill_output_captured'
+  | 'playbook_output_captured'
   | 'error';
 
 /**
@@ -29,9 +29,9 @@ export type AuditActor = 'scheduler' | 'webhook' | 'user' | 'system';
  * What the caller passes to the logger (camelCase, ergonomic). The logger
  * fills in event_id, timestamp, and redaction_applied automatically.
  *
- * `workflowId` (M1) is the cross-Skill correlation identifier — for composite
- * Skills (Phase 1+) and external orchestrators (Airflow, Step Functions). If
- * omitted, the logger sets it to `runId` so single-Skill runs default to
+ * `workflowId` (M1) is the cross-Playbook correlation identifier — for composite
+ * Playbooks (Phase 1+) and external orchestrators (Airflow, Step Functions). If
+ * omitted, the logger sets it to `runId` so single-Playbook runs default to
  * `workflow_id == run_id` per Option C v1 forward-compat.
  */
 export interface AuditEventInput {
@@ -39,7 +39,7 @@ export interface AuditEventInput {
   tenantId: TenantId;
   runId: string;
   workflowId?: string;
-  skill?: string;
+  playbook?: string;
   actor: AuditActor;
   payload: Record<string, unknown>;
 }
@@ -74,12 +74,12 @@ export interface McpCallPayload {
   tool_returned_error: boolean;
 }
 
-export interface SkillOutputCapturedPayload {
+export interface PlaybookOutputCapturedPayload {
   output: unknown;
   turn_index: number;
 }
 
-export interface SkillCompletePayload {
+export interface PlaybookCompletePayload {
   output: unknown;
   duration_ms?: number;
   total_turns?: number;
@@ -197,7 +197,7 @@ export function createAuditLogger(options: CreateAuditLoggerOptions): AuditLogge
         tenant_id: input.tenantId,
         run_id: input.runId,
         workflow_id: input.workflowId ?? input.runId,
-        skill: input.skill,
+        playbook: input.playbook,
         event_type: input.type,
         actor: input.actor,
         payload,

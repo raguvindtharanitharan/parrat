@@ -89,18 +89,18 @@ describe('core/config/schema', () => {
   it('accepts a valid watch section', () => {
     const result = configSchema.safeParse({
       version: 1,
-      watch: { skill: 'freshness-investigation', input: { source: 'tpch.orders' } },
+      watch: { playbook: 'freshness-investigation', input: { source: 'tpch.orders' } },
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.watch?.skill).toBe('freshness-investigation');
+      expect(result.data.watch?.playbook).toBe('freshness-investigation');
     }
   });
 
   it('defaults watch.input to {} when omitted', () => {
     const result = configSchema.safeParse({
       version: 1,
-      watch: { skill: 'freshness-investigation' },
+      watch: { playbook: 'freshness-investigation' },
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -108,10 +108,10 @@ describe('core/config/schema', () => {
     }
   });
 
-  it('rejects watch.skill as empty string', () => {
+  it('rejects watch.playbook as empty string', () => {
     const result = configSchema.safeParse({
       version: 1,
-      watch: { skill: '' },
+      watch: { playbook: '' },
     });
     expect(result.success).toBe(false);
   });

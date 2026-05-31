@@ -3,8 +3,8 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { Command } from 'commander';
 import { loadConfig } from '../core/config/index.js';
 import type { Config } from '../core/config/types.js';
-import type { FreshnessInvestigationInput } from '../skills/freshness-investigation/input-schema.js';
-import { runSkill } from './run.js';
+import type { FreshnessInvestigationInput } from '../playbooks/freshness-investigation/input-schema.js';
+import { runPlaybook } from './run.js';
 
 export interface WebhookOptions {
   config: Config;
@@ -24,7 +24,7 @@ export interface WebhookServer {
  */
 export function mapMonteCarloPayload(
   body: unknown,
-): { skill: string; input: FreshnessInvestigationInput } | null {
+): { playbook: string; input: FreshnessInvestigationInput } | null {
   if (typeof body !== 'object' || body === null) return null;
   const b = body as Record<string, unknown>;
   if (b.alert_type !== 'freshness') return null;
@@ -35,7 +35,7 @@ export function mapMonteCarloPayload(
     ...(typeof sourceRaw === 'string' && sourceRaw.length > 0 ? { source: sourceRaw } : {}),
   };
 
-  return { skill: 'freshness-investigation', input };
+  return { playbook: 'freshness-investigation', input };
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -90,8 +90,8 @@ export function startWebhook(options: WebhookOptions): Promise<WebhookServer> {
     const notifyConfig = config.notify;
     const slackWebhookUrl = notifyConfig?.slack?.webhook_url;
 
-    const result = await runSkill({
-      skillName: mapped.skill,
+    const result = await runPlaybook({
+      playbookName: mapped.playbook,
       inputJson: JSON.stringify(mapped.input),
       auditPath,
       ...(slackWebhookUrl ? {} : {}),
@@ -100,7 +100,7 @@ export function startWebhook(options: WebhookOptions): Promise<WebhookServer> {
     if (result.exitCode === 0) {
       send(res, 200, { ok: true, output: result.output });
     } else {
-      send(res, 500, { error: result.error ?? 'Skill execution failed.' });
+      send(res, 500, { error: result.error ?? 'Playbook execution failed.' });
     }
   });
 

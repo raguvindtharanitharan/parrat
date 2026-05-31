@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateHtmlReport } from '../../../src/core/report/html.js';
 
-const META = { generatedAt: '2026-05-24T14:30:00.000Z', skillName: 'freshness-investigation' };
+const META = { generatedAt: '2026-05-24T14:30:00.000Z', playbookName: 'freshness-investigation' };
 
 const FRESHNESS_OUTPUT = {
   status: 'stale_error',
@@ -33,13 +33,13 @@ describe('generateHtmlReport', () => {
     expect(html.length).toBeGreaterThan(100);
   });
 
-  it('contains skill name in title and header', () => {
+  it('contains playbook name in title and header', () => {
     const html = generateHtmlReport('freshness-investigation', {}, META);
     expect(html).toContain('freshness-investigation');
   });
 
   it('contains the generated date in title', () => {
-    const html = generateHtmlReport('my-skill', {}, META);
+    const html = generateHtmlReport('my-playbook', {}, META);
     expect(html).toContain('2026-05-24');
   });
 

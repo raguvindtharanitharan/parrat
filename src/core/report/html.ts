@@ -1,6 +1,6 @@
 export interface ReportMeta {
   generatedAt: string;
-  skillName: string;
+  playbookName: string;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -113,7 +113,8 @@ function renderStaleSources(sources: unknown[]): string {
       const lastLoaded = asString(s.last_loaded_at) ?? '—';
       const threshold = asString(s.threshold_breached);
       const summary = asString(s.summary) ?? '';
-      const color = threshold === 'error' ? '#DC2626' : threshold === 'warn' ? '#D97706' : '#6B7280';
+      const color =
+        threshold === 'error' ? '#DC2626' : threshold === 'warn' ? '#D97706' : '#6B7280';
       return `
         <tr>
           <td style="font-family:monospace;font-size:0.83rem;">${esc(source)}</td>
@@ -147,7 +148,7 @@ function renderDownstreamImpact(impact: Record<string, unknown>): string {
       ? `<ul style="margin:8px 0 0 0;padding-left:20px;">${models.map((m) => `<li style="font-family:monospace;font-size:0.83rem;color:#374151;">${esc(String(m))}</li>`).join('')}</ul>`
       : '';
   const body = `
-    ${severity ? `<div style="margin-bottom:8px;">${pill(severity + ' severity', sevColor)}</div>` : ''}
+    ${severity ? `<div style="margin-bottom:8px;">${pill(`${severity} severity`, sevColor)}</div>` : ''}
     <div style="font-size:0.87rem;color:#374151;">${models.length} downstream model${models.length !== 1 ? 's' : ''} affected</div>
     ${modelList}`;
   return card('Downstream impact', body);
@@ -155,14 +156,19 @@ function renderDownstreamImpact(impact: Record<string, unknown>): string {
 
 // ── main export ───────────────────────────────────────────────────────────────
 
-export function generateHtmlReport(skillName: string, output: unknown, meta: ReportMeta): string {
+export function generateHtmlReport(
+  playbookName: string,
+  output: unknown,
+  meta: ReportMeta,
+): string {
   const out = asRecord(output) ?? {};
 
   const status = asString(out.status);
   const confidence = asString(out.confidence);
   const rootCause =
     asString(out.root_cause_summary) ?? asString(out.root_cause) ?? asString(out.impact_summary);
-  const recommendedAction = out.recommended_action !== null ? asString(out.recommended_action) : undefined;
+  const recommendedAction =
+    out.recommended_action !== null ? asString(out.recommended_action) : undefined;
   const staleSources = asArray(out.stale_sources);
   const downstreamImpact = asRecord(out.downstream_impact);
   const evidence = asArray(out.evidence);
@@ -176,10 +182,10 @@ export function generateHtmlReport(skillName: string, output: unknown, meta: Rep
     ? `<div style="margin-right:8px;">${pill(status.replace(/_/g, ' '), statusColor(status))}</div>`
     : '';
   const confidenceBadge = confidence
-    ? `<div>${pill(confidence + ' confidence', confidenceColor(confidence))}</div>`
+    ? `<div>${pill(`${confidence} confidence`, confidenceColor(confidence))}</div>`
     : '';
 
-  // Context line for skill-specific summary identifiers
+  // Context line for playbook-specific summary identifiers
   let contextLine = '';
   if (metricName !== undefined) {
     const pct = dropPercent !== undefined ? ` · drop ${dropPercent.toFixed(1)}%` : '';
@@ -190,7 +196,10 @@ export function generateHtmlReport(skillName: string, output: unknown, meta: Rep
   }
 
   const rootCauseSection = rootCause
-    ? card('Root cause', `<p style="margin:0;font-size:0.95rem;color:#111827;line-height:1.6;">${esc(rootCause)}</p>`)
+    ? card(
+        'Root cause',
+        `<p style="margin:0;font-size:0.95rem;color:#111827;line-height:1.6;">${esc(rootCause)}</p>`,
+      )
     : '';
 
   const recommendedActionSection = recommendedAction
@@ -214,14 +223,14 @@ export function generateHtmlReport(skillName: string, output: unknown, meta: Rep
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Parrat — ${esc(skillName)} — ${esc(meta.generatedAt.slice(0, 10))}</title>
+  <title>Parrat — ${esc(playbookName)} — ${esc(meta.generatedAt.slice(0, 10))}</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #F0F2F9; color: #111827; }
     .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
     header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
     .brand { font-weight: 700; font-size: 1.1rem; color: #6366F1; letter-spacing: -0.01em; }
-    .skill-chip { background: #EEF2FF; color: #4338CA; font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; font-family: monospace; }
+    .playbook-chip { background: #EEF2FF; color: #4338CA; font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; font-family: monospace; }
     .ts { font-size: 0.8rem; color: #9CA3AF; margin-left: auto; }
     .status-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
     details.raw { background: #fff; border: 1px solid #E1E5F0; border-radius: 8px; margin-top: 24px; }
@@ -237,7 +246,7 @@ export function generateHtmlReport(skillName: string, output: unknown, meta: Rep
   <div class="container">
     <header>
       <span class="brand">Parrat</span>
-      <span class="skill-chip">${esc(skillName)}</span>
+      <span class="playbook-chip">${esc(playbookName)}</span>
       <span class="ts">${esc(formatTs(meta.generatedAt))}</span>
     </header>
 

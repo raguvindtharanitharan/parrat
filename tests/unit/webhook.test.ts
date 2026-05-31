@@ -4,16 +4,16 @@ import type { WebhookServer } from '../../src/cli/webhook.js';
 import type { Config } from '../../src/core/config/types.js';
 
 vi.mock('../../src/cli/run.js', () => ({
-  runSkill: vi.fn(),
+  runPlaybook: vi.fn(),
 }));
 
-import { runSkill } from '../../src/cli/run.js';
+import { runPlaybook } from '../../src/cli/run.js';
 
 const minimalConfig: Config = {
   version: 1,
   tenant_id: 'default',
   mcpServers: {},
-  skills: { defaults: { timeout_seconds: 60, max_retries: 2 } },
+  playbooks: { defaults: { timeout_seconds: 60, max_retries: 2 } },
   audit: {
     log_path: '.parrat/audit.jsonl',
     hash_algorithm: 'sha256',
@@ -28,7 +28,7 @@ describe('mapMonteCarloPayload', () => {
   it('returns mapped payload for a valid Monte Carlo freshness alert', () => {
     const result = mapMonteCarloPayload({ alert_type: 'freshness', table: 'orders' });
     expect(result).toEqual({
-      skill: 'freshness-investigation',
+      playbook: 'freshness-investigation',
       input: { source: 'orders', threshold: 'error' },
     });
   });
@@ -52,7 +52,7 @@ describe('startWebhook HTTP handler', () => {
   let server: WebhookServer;
 
   beforeEach(() => {
-    vi.mocked(runSkill).mockReset();
+    vi.mocked(runPlaybook).mockReset();
   });
 
   afterEach(() => {
@@ -67,8 +67,8 @@ describe('startWebhook HTTP handler', () => {
     });
   }
 
-  it('returns 200 when skill succeeds', async () => {
-    vi.mocked(runSkill).mockResolvedValue({ exitCode: 0, output: { status: 'fresh' } });
+  it('returns 200 when playbook succeeds', async () => {
+    vi.mocked(runPlaybook).mockResolvedValue({ exitCode: 0, output: { status: 'fresh' } });
     server = await startWebhook({
       config: minimalConfig,
       auditPath: '.parrat/audit.jsonl',
@@ -80,8 +80,8 @@ describe('startWebhook HTTP handler', () => {
     expect(json.ok).toBe(true);
   });
 
-  it('returns 500 when skill fails', async () => {
-    vi.mocked(runSkill).mockResolvedValue({ exitCode: 1, error: 'something went wrong' });
+  it('returns 500 when playbook fails', async () => {
+    vi.mocked(runPlaybook).mockResolvedValue({ exitCode: 1, error: 'something went wrong' });
     server = await startWebhook({
       config: minimalConfig,
       auditPath: '.parrat/audit.jsonl',
@@ -117,7 +117,7 @@ describe('startWebhook HTTP handler', () => {
   });
 
   it('returns 200 when correct secret is provided', async () => {
-    vi.mocked(runSkill).mockResolvedValue({ exitCode: 0, output: {} });
+    vi.mocked(runPlaybook).mockResolvedValue({ exitCode: 0, output: {} });
     server = await startWebhook({
       config: minimalConfig,
       auditPath: '.parrat/audit.jsonl',
@@ -133,7 +133,7 @@ describe('startWebhook HTTP handler', () => {
   });
 
   it('skips auth check when no secret is configured', async () => {
-    vi.mocked(runSkill).mockResolvedValue({ exitCode: 0, output: {} });
+    vi.mocked(runPlaybook).mockResolvedValue({ exitCode: 0, output: {} });
     server = await startWebhook({
       config: minimalConfig,
       auditPath: '.parrat/audit.jsonl',

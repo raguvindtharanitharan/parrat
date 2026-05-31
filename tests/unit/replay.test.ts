@@ -18,7 +18,7 @@ function makeRecord(
     timestamp,
     tenant_id: 'default',
     run_id: RUN_ID,
-    skill: 'freshness-investigation',
+    playbook: 'freshness-investigation',
     event_type,
     actor: 'user',
     payload,
@@ -71,7 +71,7 @@ describe('cli/replay', () => {
 
   it('sorts events by timestamp', () => {
     stubFile([
-      makeRecord('skill_complete', { duration_ms: 5000 }, '2026-05-09T10:00:02.000Z'),
+      makeRecord('playbook_complete', { duration_ms: 5000 }, '2026-05-09T10:00:02.000Z'),
       makeRecord('trigger', { input: {} }, '2026-05-09T10:00:00.000Z'),
       makeRecord(
         'claude_call',
@@ -96,7 +96,7 @@ describe('cli/replay', () => {
     stubFile([makeRecord('trigger', { input: {} })]);
     const result = replayRun({ runId: RUN_ID, auditPath: AUDIT_PATH });
     expect(result.lines?.[0]).toMatch(
-      /\[10:00:00\] TRIGGER\s+skill=freshness-investigation actor=user/,
+      /\[10:00:00\] TRIGGER\s+playbook=freshness-investigation actor=user/,
     );
   });
 
@@ -130,14 +130,14 @@ describe('cli/replay', () => {
     expect(result.lines?.[0]).toMatch(/ERROR/);
   });
 
-  it('formats skill_output_captured event', () => {
-    stubFile([makeRecord('skill_output_captured', { output: {}, turn_index: 2 })]);
+  it('formats playbook_output_captured event', () => {
+    stubFile([makeRecord('playbook_output_captured', { output: {}, turn_index: 2 })]);
     const result = replayRun({ runId: RUN_ID, auditPath: AUDIT_PATH });
     expect(result.lines?.[0]).toMatch(/OUTPUT\s+turn=2/);
   });
 
-  it('formats skill_complete event with duration', () => {
-    stubFile([makeRecord('skill_complete', { duration_ms: 85000 })]);
+  it('formats playbook_complete event with duration', () => {
+    stubFile([makeRecord('playbook_complete', { duration_ms: 85000 })]);
     const result = replayRun({ runId: RUN_ID, auditPath: AUDIT_PATH });
     expect(result.lines?.[0]).toMatch(/COMPLETE\s+dur=85\.0s/);
   });

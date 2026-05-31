@@ -4,7 +4,7 @@ import { LlmApiError } from '../errors.js';
 
 /**
  * Per-call options for the LLM client. Mirrors the Anthropic SDK's
- * messages.create shape but exposes only what skill-executor needs to drive.
+ * messages.create shape but exposes only what playbook-executor needs to drive.
  */
 export interface LlmCallOptions {
   model: string;
